@@ -92,4 +92,14 @@ public class BookServiceImpl implements BookService {
         }
     }
 
+    @Override
+    public void deleteBook(Long id) {
+        Optional<Book> bookOptional = bookRepository.findById(id);
+        if (bookOptional.isPresent()) {
+            bookRepository.deleteById(id);
+        } else {
+            throw new IllegalArgumentException("Book not found for the given ID: " + id);
+        }
+    }
+
 }

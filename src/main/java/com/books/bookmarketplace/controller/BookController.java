@@ -137,7 +137,6 @@ public class BookController {
             }
             throw new ValidationException(errors);
         }
-
         try {
             Book savedBook = bookService.addBook(book);
             logger.log(Level.INFO, "Added new book: " + savedBook.getTitle());
@@ -166,8 +165,23 @@ public class BookController {
             return ResponseEntity.ok().body(updatedBook);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error occurred while updating a book: " + e.getMessage());
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    @DeleteMapping("/deleteBook")
+    public ResponseEntity<String> deleteBook(@RequestParam(name = "bookId") Long bookId) {
+        if (bookId == null || bookId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid book ID. Please provide a positive numeric value."));
+        }
+        try {
+            logger.log(Level.INFO, "Deleting book with ID: " + bookId);
+            bookService.deleteBook(bookId);
+            logger.log(Level.INFO, "Book with ID " + bookId + " deleted successfully.");
+            return ResponseEntity.ok("Book with ID " + bookId + " deleted successfully.");
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error occurred while deleting the book with ID " + bookId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while deleting the book: " + e.getMessage());
+        }
+    }
 }
