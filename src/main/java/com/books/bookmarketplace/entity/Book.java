@@ -10,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.ISBN;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -60,15 +62,15 @@ public class Book {
     private Status status;
 
     @ManyToOne
-    @JoinColumn(name = "seller_id")
-    private User seller;
+    @JoinColumn(name = "seller_user_id")
+    private User seller_user;
 
     @ManyToOne
-    @JoinColumn(name = "buyer_id")
-    private User buyer;
+    @JoinColumn(name = "buyer_user_id")
+    private User buyer_user;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Transaction> transactions;
+    private List<Transaction> transactions = new ArrayList<>();
 
     public enum Category {
         FICTION,

@@ -25,12 +25,12 @@ public class Transaction {
 
     @NotNull
     @ManyToOne
-    @JoinColumn(name = "seller_id")
+    @JoinColumn(name = "seller_user_id")
     private User seller;
 
     @NotNull
     @ManyToOne
-    @JoinColumn(name = "buyer_id")
+    @JoinColumn(name = "buyer_user_id")
     private User buyer;
 
     @NotNull

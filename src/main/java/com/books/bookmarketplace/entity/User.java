@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -40,17 +42,17 @@ public class User {
     @Pattern(regexp = "\\d{10}", message = "Phone number must be a 10-digit number")
     private String phoneNumber;
 
-    @OneToMany(mappedBy = "seller")
-    private Set<Book> booksForSale;
+    @OneToMany(mappedBy = "seller_user")
+    private List<Book> booksForSale;
+
+    @OneToMany(mappedBy = "buyer_user")
+    private List<Book> purchasedBooks;
 
     @OneToMany(mappedBy = "buyer")
-    private Set<Book> purchasedBooks;
+    private List<Transaction> purchasedTransactions;
 
     @OneToMany(mappedBy = "seller")
-    private Set<Transaction> soldTransactions;
-
-    @OneToMany(mappedBy = "buyer")
-    private Set<Transaction> purchasedTransactions;
+    private List<Transaction> soldTransactions;
 
     @NotNull
     @DecimalMin(value = "0.0", message = "Funds must be a non-negative value")
