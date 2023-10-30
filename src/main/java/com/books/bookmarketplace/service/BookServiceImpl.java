@@ -15,7 +15,6 @@ import java.util.Optional;
 @Service
 public class BookServiceImpl implements BookService {
 
-
     private final BookRepository bookRepository;
 
     @Autowired
@@ -26,6 +25,11 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
+    }
+
+    @Override
+    public List<Book> getAvailableBooks() {
+        return bookRepository.findAvailableBooks(Book.Status.AVAILABLE);
     }
 
     public Book getBookById(Long bookId) {
@@ -42,6 +46,11 @@ public class BookServiceImpl implements BookService {
     @Override
     public Book getBookByISBN(String isbn) {
         return bookRepository.findBookByISBN(isbn);
+    }
+
+    @Override
+    public List<Book> searchBooks(String keyword) {
+        return bookRepository.findBooksByKeyword(keyword);
     }
 
 

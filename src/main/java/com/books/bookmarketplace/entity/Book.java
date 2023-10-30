@@ -8,11 +8,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.ISBN;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Entity
 @Data
@@ -35,6 +33,14 @@ public class Book {
     private String author;
 
     private int edition;
+
+    @Positive(message = "Year must be a positive number")
+    private int publicationYear;
+
+    @NotBlank(message = "Language is required")
+    private String language;
+
+    private String publisher;
 
     @NotNull
     @Positive(message = "Original price must be a positive number")

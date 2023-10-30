@@ -16,4 +16,10 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     @Query("SELECT b FROM Book b WHERE b.ISBN = :ISBN")
     Book findBookByISBN(@Param("ISBN") String ISBN);
+
+    @Query("SELECT b FROM Book b WHERE LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.author) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Book> findBooksByKeyword(@Param("keyword") String keyword);
+
+    @Query("SELECT b FROM Book b WHERE b.status = :status")
+    List<Book> findAvailableBooks(@Param("status") Book.Status status);
 }

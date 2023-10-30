@@ -4,6 +4,7 @@ import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.BookService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,19 @@ public class BookController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok().body(books);
+    }
+
+    @GetMapping("/getAvailableBooks")
+    public ResponseEntity<List<Book>> getAvailableBooks() {
+        logger.log(Level.INFO, "Fetching all available books");
+        List<Book> books = bookService.getAvailableBooks();
+        if (books.isEmpty()) {
+            logger.log(Level.INFO, "No books available");
+            return ResponseEntity.noContent().build();
+        } else {
+            logger.log(Level.INFO, "Retrieved " + books.size() + " available books");
+            return ResponseEntity.ok(books);
+        }
     }
 
     @GetMapping("/getBookById")
@@ -92,6 +106,24 @@ public class BookController {
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error fetching book with ISBN: " + isbn, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/searchBooks")
+    public ResponseEntity<List<Book>> searchBooks(@RequestParam(name = "keyword") @NotBlank(message = "Search term cannot be blank") String keyword) {
+        try {
+            logger.log(Level.INFO, "Fetching all books with keyword: " + keyword);
+            List<Book> books = bookService.searchBooks(keyword);
+            if (books.isEmpty()) {
+                logger.log(Level.INFO, "No books found with keyword: " + keyword);
+                return ResponseEntity.noContent().build();
+            } else {
+                logger.log(Level.INFO, "Retrieved " + books.size() + " books with keyword: " + keyword);
+                return ResponseEntity.ok(books);
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error fetching book with keyword: " + keyword, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
