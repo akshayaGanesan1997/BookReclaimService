@@ -1,19 +1,19 @@
 package com.books.bookmarketplace.controller;
 
-import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.UserService;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -74,4 +74,24 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PostMapping("/addUser")
+    public ResponseEntity<User> addUser(@Valid @RequestBody User user, BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<String> errors = new ArrayList<>();
+            for (FieldError error : bindingResult.getFieldErrors()) {
+                errors.add(error.getField() + ": " + error.getDefaultMessage());
+            }
+            throw new ValidationException(errors);
+        }
+        try {
+            User newUser = userService.addUser(user);
+            logger.log(Level.INFO, "Added new user: " + newUser.getUsername());
+            return ResponseEntity.ok().body(newUser);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error adding a new user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

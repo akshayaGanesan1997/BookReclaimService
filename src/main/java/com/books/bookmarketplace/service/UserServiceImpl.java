@@ -37,4 +37,9 @@ public class UserServiceImpl implements UserService{
         Optional<User> userOptional = userRepository.findUserByKeyword(keyword);
         return userOptional.orElse(null);
     }
+
+    @Override
+    public User addUser(User user) {
+        return userRepository.save(user);
+    }
 }

@@ -8,4 +8,5 @@ public interface UserService {
     List<User> getAllUsers();
     User getUserById(Long id);
     User searchUsersByEMailOrUserName(String keyword);
+    User addUser(User user);
 }
