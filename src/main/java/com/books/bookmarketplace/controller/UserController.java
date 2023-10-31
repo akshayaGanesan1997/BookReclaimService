@@ -1,5 +1,6 @@
 package com.books.bookmarketplace.controller;
 
+import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.UserService;
@@ -91,6 +92,54 @@ public class UserController {
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error adding a new user: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @DeleteMapping("/deleteUser")
+    public ResponseEntity<String> deleteUser(@RequestParam(name = "userId") Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        try {
+            logger.log(Level.INFO, "Deleting user with ID: " + userId);
+            userService.deleteUser(userId);
+            logger.log(Level.INFO, "User with ID " + userId + " deleted successfully.");
+            return ResponseEntity.ok("User with ID " + userId + " deleted successfully.");
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error occurred while deleting the user with ID " + userId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while deleting the userId: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/purchasedBooks")
+    public ResponseEntity<List<Book>> purchasedBooks(@RequestParam(name = "userId") Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        List<Book> purchasedBooks = userService.getPurchasedBooksByUser(userId);
+
+        if (purchasedBooks.isEmpty()) {
+            logger.log(Level.INFO, "No books available");
+            return ResponseEntity.noContent().build();
+        } else {
+            logger.log(Level.INFO, "Retrieved " + purchasedBooks.size() + " books purchased by user");
+            return ResponseEntity.ok().body(purchasedBooks);
+        }
+    }
+
+    @GetMapping("/booksSoldByUser")
+    public ResponseEntity<List<Book>> booksSoldByUser(@RequestParam(name = "userId") Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        List<Book> soldBooks = userService.getBooksSoldByUser(userId);
+
+        if (soldBooks.isEmpty()) {
+            logger.log(Level.INFO, "No books sold by the user");
+            return ResponseEntity.noContent().build();
+        } else {
+            logger.log(Level.INFO, "Retrieved " + soldBooks.size() + " books sold by user");
+            return ResponseEntity.ok().body(soldBooks);
         }
     }
 
