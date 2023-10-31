@@ -13,4 +13,5 @@ public interface UserService {
     void deleteUser(Long id);
     List<Book> getPurchasedBooksByUser(Long id);
     List<Book> getBooksSoldByUser(Long id);
+    User addFundsToUser(Long userId, Double amount);
 }

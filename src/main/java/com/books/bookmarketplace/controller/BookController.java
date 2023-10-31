@@ -184,4 +184,22 @@ public class BookController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while deleting the book: " + e.getMessage());
         }
     }
+
+    @PostMapping("/buyBook")
+    public ResponseEntity<String> buyBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to buy book with ID " + bookId);
+            String purchaseResult = bookService.buyBook(userId, bookId);
+            if (purchaseResult.equals("success")) {
+                logger.log(Level.INFO, "User with ID " + userId + " purchased book with ID " + bookId + " successfully.");
+                return ResponseEntity.ok("Book purchased successfully.");
+            } else {
+                logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + purchaseResult);
+                return ResponseEntity.badRequest().build();
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
 }

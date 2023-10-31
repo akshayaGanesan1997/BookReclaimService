@@ -42,19 +42,10 @@ public class User {
     @Pattern(regexp = "\\d{10}", message = "Phone number must be a 10-digit number")
     private String phoneNumber;
 
-    @OneToMany(mappedBy = "seller_user")
-    private List<Book> booksForSale;
-
-    @OneToMany(mappedBy = "buyer_user")
-    private List<Book> purchasedBooks;
-
-    @OneToMany(mappedBy = "buyer")
-    private List<Transaction> purchasedTransactions;
-
-    @OneToMany(mappedBy = "seller")
-    private List<Transaction> soldTransactions;
-
     @NotNull
     @DecimalMin(value = "0.0", message = "Funds must be a non-negative value")
     private Double funds;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Transaction> transactions = new ArrayList<>();
 }

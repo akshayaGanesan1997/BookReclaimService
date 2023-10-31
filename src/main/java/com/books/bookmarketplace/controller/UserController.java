@@ -5,6 +5,7 @@ import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,5 +143,27 @@ public class UserController {
             return ResponseEntity.ok().body(soldBooks);
         }
     }
+
+    @PutMapping("/addFunds")
+    public ResponseEntity<User> addFundsToUser(
+            @RequestParam(name = "userId") @Positive Long userId,
+            @RequestParam(name = "funds") @DecimalMin(value = "0.0", message = "Amount must be a non-negative value") Double funds
+    ) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        if (funds == null || funds <= 0.0) {
+            throw new ValidationException(Collections.singletonList("Invalid amount. Please provide a non-negative value."));
+        }
+        try {
+            User updatedUser = userService.addFundsToUser(userId, funds);
+            logger.log(Level.INFO, "Added funds to user: " + updatedUser.getUsername());
+            return ResponseEntity.ok().body(updatedUser);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error adding funds to user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }
