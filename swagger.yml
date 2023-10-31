@@ -1,0 +1,446 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Book Marketplace API
+  description: API for buying and selling books in the Book Marketplace Application
+basePath: /api
+schemes:
+  - http
+  - https
+paths:
+  /users:
+    get:
+      summary: Get all users
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/User'
+        204:
+          description: No content
+  /users/getUserById:
+    get:
+      summary: Get a user by ID
+      parameters:
+        - name: userId
+          in: query
+          description: ID of the user to retrieve
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/User'
+        404:
+          description: User not found
+  /users/addUser:
+    post:
+      summary: Add a new user
+      parameters:
+        - name: body
+          in: body
+          description: User object to add
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/User'
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /users/updateUser:
+    put:
+      summary: Update user details
+      parameters:
+        - name: userId
+          in: query
+          description: ID of the user to update
+          required: true
+          type: integer
+          format: int64
+        - name: body
+          in: body
+          description: Updated user object
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/User'
+        400:
+          description: Bad request
+        404:
+          description: User not found
+        500:
+          description: Internal server error
+  /users/deleteUser:
+    delete:
+      summary: Delete a user
+      parameters:
+        - name: userId
+          in: query
+          description: ID of the user to delete
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: User deleted successfully
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /books:
+    get:
+      summary: Get all books
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Book'
+        204:
+          description: No content
+  /getAvailableBooks:
+      get:
+        summary: Get available books
+        responses:
+          200:
+            description: Successful response
+            schema:
+              type: array
+              items:
+                $ref: '#/definitions/Book'
+          204:
+            description: No content
+  /books/getBookById:
+    get:
+      summary: Get a book by ID
+      parameters:
+        - name: bookId
+          in: query
+          description: ID of the book to retrieve
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Book'
+        404:
+          description: Book not found
+  /books/getBooksByCategory:
+    get:
+      summary: Get books by category
+      parameters:
+        - name: category
+          in: query
+          description: Category of books to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Book'
+        204:
+          description: No content
+  /books/getBookByISBN:
+    get:
+      summary: Get a book by ISBN
+      parameters:
+        - name: isbn
+          in: query
+          description: ISBN of the book to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Book'
+        404:
+          description: Book not found
+  /books/searchBooks:
+    get:
+      summary: Search for books by keyword
+      parameters:
+        - name: keyword
+          in: query
+          description: Search keyword to find books
+          required: true
+          type: string
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Book'
+        204:
+          description: No content
+  /books/addBook:
+    post:
+      summary: Add a new book for sale
+      parameters:
+        - name: body
+          in: body
+          description: Book object to add
+          required: true
+          schema:
+            $ref: '#/definitions/Book'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Book'
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /books/updateBook:
+    put:
+      summary: Update book details
+      parameters:
+        - name: bookId
+          in: query
+          description: ID of the book to update
+          required: true
+          type: integer
+          format: int64
+        - name: body
+          in: body
+          description: Updated book object
+          required: true
+          schema:
+            $ref: '#/definitions/Book'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Book'
+        400:
+          description: Bad request
+        404:
+          description: Book not found
+        500:
+          description: Internal server error
+  /books/deleteBook:
+    delete:
+      summary: Delete a book
+      parameters:
+        - name: bookId
+          in: query
+          description: ID of the book to delete
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Book deleted successfully
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /transactions:
+    get:
+      summary: Get all transactions
+      responses:
+        200:
+          description: Successful response
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Transaction'
+        204:
+          description: No content
+  /transactions/getTransactionById:
+    get:
+      summary: Get a transaction by ID
+      parameters:
+        - name: transactionId
+          in: query
+          description: ID of the transaction to retrieve
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Transaction'
+        404:
+          description: Transaction not found
+  /transactions/addTransaction:
+    post:
+      summary: Add a new transaction
+      parameters:
+        - name: body
+          in: body
+          description: Transaction object to add
+          required: true
+          schema:
+            $ref: '#/definitions/Transaction'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Transaction'
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+  /transactions/updateTransaction:
+    put:
+      summary: Update transaction details
+      parameters:
+        - name: transactionId
+          in: query
+          description: ID of the transaction to update
+          required: true
+          type: integer
+          format: int64
+        - name: body
+          in: body
+          description: Updated transaction object
+          required: true
+          schema:
+            $ref: '#/definitions/Transaction'
+      responses:
+        200:
+          description: Successful response
+          schema:
+            $ref: '#/definitions/Transaction'
+        400:
+          description: Bad request
+        404:
+          description: Transaction not found
+        500:
+          description: Internal server error
+  /transactions/deleteTransaction:
+    delete:
+      summary: Delete a transaction
+      parameters:
+        - name: transactionId
+          in: query
+          description: ID of the transaction to delete
+          required: true
+          type: integer
+          format: int64
+      responses:
+        200:
+          description: Transaction deleted successfully
+        400:
+          description: Bad request
+        500:
+          description: Internal server error
+definitions:
+  User:
+    type: object
+    properties:
+      userId:
+        type: integer
+        format: int64
+      username:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      phoneNumber:
+        type: string
+      booksForSale:
+        type: array
+        items:
+          $ref: '#/definitions/Book'
+      purchasedBooks:
+        type: array
+        items:
+          $ref: '#/definitions/Book'
+      purchasedTransactions:
+        type: array
+        items:
+          $ref: '#/definitions/Transaction'
+      soldTransactions:
+        type: array
+        items:
+          $ref: '#/definitions/Transaction'
+      funds:
+        type: number
+        format: double
+  Book:
+    type: object
+    properties:
+      bookId:
+        type: integer
+        format: int64
+      ISBN:
+        type: string
+      title:
+        type: string
+      author:
+        type: string
+      edition:
+        type: integer
+      publicationYear:
+        type: integer
+      language:
+        type: string
+      publisher:
+        type: string
+      originalPrice:
+        type: number
+        format: double
+      currentPrice:
+        type: number
+        format: double
+      description:
+        type: string
+      category:
+        type: string
+      conditionDescription:
+        type: string
+      condition:
+        type: string
+      status:
+        type: string
+  Transaction:
+    type: object
+    properties:
+      transactionId:
+        type: integer
+        format: int64
+      seller:
+        $ref: '#/definitions/User'
+      buyer:
+        $ref: '#/definitions/User'
+      book:
+        $ref: '#/definitions/Book'
+      transactionDate:
+        type: string
+        format: date
+      transactionAmount:
+        type: number
+        format: double
+      status:
+        type: string
+      transactionNotes:
+        type: string
