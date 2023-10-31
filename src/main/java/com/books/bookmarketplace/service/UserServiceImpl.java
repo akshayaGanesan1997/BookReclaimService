@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Transactional
 @Service
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
@@ -37,4 +37,30 @@ public class UserServiceImpl implements UserService{
         Optional<User> userOptional = userRepository.findUserByKeyword(keyword);
         return userOptional.orElse(null);
     }
+
+    @Override
+    public User addUser(User user) {
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isPresent()) {
+            userRepository.deleteById(id);
+        } else {
+            throw new IllegalArgumentException("User not found for the given ID:" + id);
+        }
+    }
+
+    @Override
+    public List<Book> getPurchasedBooksByUser(Long id) {
+         return userRepository.findPurchasedBooksByUser(id);
+    }
+
+    @Override
+    public List<Book> getBooksSoldByUser(Long id) {
+        return userRepository.findBooksSoldByUser(id);
+    }
+
 }
