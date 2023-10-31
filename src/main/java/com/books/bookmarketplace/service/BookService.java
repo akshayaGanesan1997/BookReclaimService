@@ -15,4 +15,5 @@ public interface BookService {
     Book updateBook(Book newBook, Long id);
     void deleteBook(Long id);
     String buyBook(Long userId, Long bookId);
+    String sellBook(Long userId, Long bookId);
 }

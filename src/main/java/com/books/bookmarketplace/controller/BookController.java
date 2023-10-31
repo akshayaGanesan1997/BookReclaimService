@@ -202,4 +202,22 @@ public class BookController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
         }
     }
+
+    @PostMapping("/sellBook")
+    public ResponseEntity<String> sellBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ID " + bookId);
+            String sellResult = bookService.sellBook(userId, bookId);
+            if (sellResult.equals("success")) {
+                logger.log(Level.INFO, "User with ID " + userId + " sold book with ID " + bookId + " successfully.");
+                return ResponseEntity.ok("Book sold successfully.");
+            } else {
+                logger.log(Level.WARNING, "User with ID " + userId + " failed to sell the book: " + sellResult);
+                return ResponseEntity.badRequest().build();
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
 }

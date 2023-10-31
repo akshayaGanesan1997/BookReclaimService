@@ -1,6 +1,7 @@
 package com.books.bookmarketplace.service;
 
 import com.books.bookmarketplace.entity.Book;
+import com.books.bookmarketplace.entity.Transaction;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.repository.TransactionRepository;
 import com.books.bookmarketplace.repository.UserRepository;
@@ -8,6 +9,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +46,33 @@ public class UserServiceImpl implements UserService {
     @Override
     public User addUser(User user) {
         return userRepository.save(user);
+    }
+
+    @Override
+    public User updateUser(User user, Long id) {
+        try {
+            User existingUser = userRepository.findById(id).orElse(null);
+            if (existingUser != null) {
+                existingUser.setEmail(user.getEmail());
+                existingUser.setFirstName(user.getFirstName());
+                existingUser.setLastName(user.getLastName());
+                existingUser.setPassword(user.getPassword());
+                existingUser.setPhoneNumber(user.getPhoneNumber());
+                existingUser.setFunds(user.getFunds());
+                existingUser.setUsername(user.getUsername());
+                List<Transaction> updatedTransactions = new ArrayList<>();
+                for (Transaction transaction : user.getTransactions()) {
+                    transaction.setUser(existingUser);
+                    updatedTransactions.add(transaction);
+                }
+                existingUser.setTransactions(updatedTransactions);
+                return userRepository.save(existingUser);
+            } else {
+                throw new IllegalArgumentException("User not found for the given ID: " + user.getUserId());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

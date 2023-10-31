@@ -96,6 +96,28 @@ public class UserController {
         }
     }
 
+    @PutMapping("/updateUser")
+    public ResponseEntity<User> updateUser(@RequestParam(name = "userId") @Positive Long userId, @Valid @RequestBody User user, BindingResult bindingResult) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        if (bindingResult.hasErrors()) {
+            List<String> errors = new ArrayList<>();
+            for (FieldError error : bindingResult.getFieldErrors()) {
+                errors.add(error.getField() + ": " + error.getDefaultMessage());
+            }
+            throw new ValidationException(errors);
+        }
+        try {
+            User updatedUser = userService.updateUser(user, userId);
+            logger.log(Level.INFO, "Updated the user: " + updatedUser.getUsername());
+            return ResponseEntity.ok().body(updatedUser);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error occurred while updating a user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @DeleteMapping("/deleteUser")
     public ResponseEntity<String> deleteUser(@RequestParam(name = "userId") Long userId) {
         if (userId == null || userId <= 0) {
