@@ -1,5 +1,6 @@
 package com.books.bookmarketplace.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -23,19 +24,14 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long transactionId;
 
-    @NotNull
     @ManyToOne
-    @JoinColumn(name = "seller_user_id")
-    private User seller;
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
 
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "buyer_user_id")
-    private User buyer;
-
-    @NotNull
     @ManyToOne
     @JoinColumn(name = "book_id")
+    @JsonIgnore
     private Book book;
 
     @NotNull(message = "Transaction date is required")
@@ -52,6 +48,15 @@ public class Transaction {
 
     @Size(max = 255, message = "Transaction notes must not exceed 255 characters")
     private String transactionNotes;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private TransactionType transactionType;
+
+    public enum TransactionType {
+        BUY,
+        SELL
+    }
 
     public enum TransactionStatus {
         PENDING,

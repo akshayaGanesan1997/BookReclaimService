@@ -2,6 +2,7 @@ package com.books.bookmarketplace.service;
 
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
+import com.books.bookmarketplace.repository.TransactionRepository;
 import com.books.bookmarketplace.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,12 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -55,12 +58,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Book> getPurchasedBooksByUser(Long id) {
-        return userRepository.findPurchasedBooksByUser(id);
+        return transactionRepository.findPurchasedBooksByUser(id);
     }
 
     @Override
     public List<Book> getBooksSoldByUser(Long id) {
-        return userRepository.findBooksSoldByUser(id);
+        return transactionRepository.findBooksSoldByUser(id);
     }
 
     @Override

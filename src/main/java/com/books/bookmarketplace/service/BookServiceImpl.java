@@ -2,12 +2,19 @@ package com.books.bookmarketplace.service;
 
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.Transaction;
+import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.repository.BookRepository;
+import com.books.bookmarketplace.repository.TransactionRepository;
+import com.books.bookmarketplace.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,10 +23,14 @@ import java.util.Optional;
 public class BookServiceImpl implements BookService {
 
     private final BookRepository bookRepository;
+    private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
 
     @Autowired
-    public BookServiceImpl(BookRepository bookRepository) {
+    public BookServiceImpl(BookRepository bookRepository, UserRepository userRepository, TransactionRepository transactionRepository) {
         this.bookRepository = bookRepository;
+        this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -66,7 +77,6 @@ public class BookServiceImpl implements BookService {
             if (existingBook != null) {
                 existingBook.setISBN(book.getISBN());
                 existingBook.setAuthor(book.getAuthor());
-                existingBook.setBuyer_user(book.getBuyer_user());
                 existingBook.setCategory(book.getCategory());
                 existingBook.setCondition(book.getCondition());
                 existingBook.setDescription(book.getDescription());
@@ -74,7 +84,6 @@ public class BookServiceImpl implements BookService {
                 existingBook.setConditionDescription(book.getConditionDescription());
                 existingBook.setCurrentPrice(book.getCurrentPrice());
                 existingBook.setOriginalPrice(book.getOriginalPrice());
-                existingBook.setSeller_user(book.getSeller_user());
                 existingBook.setTitle(book.getTitle());
                 List<Transaction> updatedTransactions = new ArrayList<>();
                 for (Transaction transaction : book.getTransactions()) {
@@ -99,6 +108,38 @@ public class BookServiceImpl implements BookService {
             bookRepository.deleteById(id);
         } else {
             throw new IllegalArgumentException("Book not found for the given ID: " + id);
+        }
+    }
+
+    public String buyBook(Long userId, Long bookId) {
+        User user = userRepository.findById(userId).orElse(null);
+        Book book = bookRepository.findById(bookId).orElse(null);
+
+        if (user == null || book == null) {
+            return "User or book not found.";
+        }
+
+        if (book.getStatus() == Book.Status.AVAILABLE && user.getFunds() >= book.getCurrentPrice()) {
+            user.setFunds(user.getFunds() - book.getCurrentPrice());
+            book.depreciatePrice();
+            book.setStatus(Book.Status.SOLD);
+
+            Transaction transaction = new Transaction();
+            transaction.setTransactionType(Transaction.TransactionType.BUY);
+            transaction.setUser(user);
+            transaction.setBook(book);
+            LocalDate localDate = LocalDate.now();
+            Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            transaction.setTransactionDate(date);
+            transaction.setTransactionAmount(book.getCurrentPrice());
+            transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+            transactionRepository.save(transaction);
+            userRepository.save(user);
+            bookRepository.save(book);
+
+            return "success";
+        } else {
+            return "Insufficient funds or book is not available.";
         }
     }
 

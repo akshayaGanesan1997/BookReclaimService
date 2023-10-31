@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,15 +68,7 @@ public class Book {
     @Column(name = "book_status")
     private Status status;
 
-    @ManyToOne
-    @JoinColumn(name = "seller_user_id")
-    private User seller_user;
-
-    @ManyToOne
-    @JoinColumn(name = "buyer_user_id")
-    private User buyer_user;
-
-    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
     private List<Transaction> transactions = new ArrayList<>();
 
     public enum Category {
