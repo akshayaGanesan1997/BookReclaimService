@@ -55,12 +55,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Book> getPurchasedBooksByUser(Long id) {
-         return userRepository.findPurchasedBooksByUser(id);
+        return userRepository.findPurchasedBooksByUser(id);
     }
 
     @Override
     public List<Book> getBooksSoldByUser(Long id) {
         return userRepository.findBooksSoldByUser(id);
+    }
+
+    @Override
+    public User addFundsToUser(Long userId, Double amount) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User with ID " + userId + " not found."));
+        user.setFunds(user.getFunds() + amount);
+        return userRepository.save(user);
     }
 
 }
