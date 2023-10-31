@@ -143,4 +143,41 @@ public class BookServiceImpl implements BookService {
         }
     }
 
+    public String sellBook(Long userId, Long bookId) {
+        User user = userRepository.findById(userId).orElse(null);
+        Book book = bookRepository.findById(bookId).orElse(null);
+
+        if (user == null || book == null) {
+            return "User or book not found.";
+        }
+
+        if (book.getStatus() == Book.Status.AVAILABLE) {
+            if (user.getFunds() >= book.getCurrentPrice()) {
+                user.setFunds(user.getFunds() + book.getCurrentPrice());
+                book.setStatus(Book.Status.SOLD);
+
+                Transaction transaction = new Transaction();
+                transaction.setTransactionType(Transaction.TransactionType.SELL);
+                transaction.setUser(user);
+                transaction.setBook(book);
+                LocalDate localDate = LocalDate.now();
+                Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                transaction.setTransactionDate(date);
+                transaction.setTransactionAmount(book.getCurrentPrice());
+                transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+                transactionRepository.save(transaction);
+                book.depreciatePrice();
+
+                userRepository.save(user);
+                bookRepository.save(book);
+
+                return "success";
+            } else {
+                return "Insufficient funds.";
+            }
+        } else {
+            return "Book is not available for sale.";
+        }
+    }
+
 }
