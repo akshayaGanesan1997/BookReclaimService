@@ -3,6 +3,7 @@ package com.books.bookmarketplace.controller;
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.ValidationException;
+import com.books.bookmarketplace.model.UserDetails;
 import com.books.bookmarketplace.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -35,8 +36,8 @@ public class UserController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
+    public ResponseEntity<List<UserDetails>> getAllUsers() {
+        List<UserDetails> users = userService.getAllUsers();
         if (users.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
@@ -44,12 +45,12 @@ public class UserController {
     }
 
     @GetMapping("/getUserById")
-    public ResponseEntity<User> getUserById(@RequestParam(name = "userId") @Positive Long userId) {
+    public ResponseEntity<UserDetails> getUserById(@RequestParam(name = "userId") @Positive Long userId) {
         if (userId == null || userId <= 0) {
             throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
         }
         logger.log(Level.INFO, "Fetching user with ID: " + userId);
-        User user = userService.getUserById(userId);
+        UserDetails user = userService.getUserById(userId);
         if (user != null) {
             logger.log(Level.INFO, "Retrieved user: " + user.getUsername());
             return ResponseEntity.ok().body(user);
@@ -60,10 +61,10 @@ public class UserController {
     }
 
     @GetMapping("/searchUsers")
-    public ResponseEntity<User> searchUsers(@RequestParam(name = "keyword") @NotBlank(message = "Search term cannot be blank") String keyword) {
+    public ResponseEntity<UserDetails> searchUsers(@RequestParam(name = "keyword") @NotBlank(message = "Search term cannot be blank") String keyword) {
         try {
             logger.log(Level.INFO, "Fetching user with username/email: " + keyword);
-            User user = userService.searchUsersByEMailOrUserName(keyword);
+            UserDetails user = userService.searchUsersByEMailOrUserName(keyword);
             if (user != null) {
                 logger.log(Level.INFO, "Retrieved " + user.getFirstName() + " " + user.getLastName());
                 return ResponseEntity.ok(user);

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,6 +24,7 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final int MAX_SIZE = 100;
 
     @Autowired
     public BookServiceImpl(BookRepository bookRepository, UserRepository userRepository, TransactionRepository transactionRepository) {
@@ -67,6 +67,14 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book addBook(Book newBook) {
+        if (bookRepository.count() > MAX_SIZE) {
+            throw new IndexOutOfBoundsException("The inventory is full. No more new books can be added.");
+        }
+        Book existingBook = bookRepository.findBookByISBN(newBook.getISBN());
+        if (existingBook != null) {
+            throw new IllegalArgumentException("A book with the same ISBN already exists.");
+        }
+        newBook.setStatus(Book.Status.AVAILABLE);
         return bookRepository.save(newBook);
     }
 
@@ -120,7 +128,8 @@ public class BookServiceImpl implements BookService {
         }
 
         if (book.getStatus() == Book.Status.AVAILABLE && user.getFunds() >= book.getCurrentPrice()) {
-            user.setFunds(user.getFunds() - book.getCurrentPrice());
+            Double buyingPrice = book.getCurrentPrice();
+            user.setFunds(user.getFunds() - buyingPrice);
             book.depreciatePrice();
             book.setStatus(Book.Status.SOLD);
 
@@ -131,7 +140,7 @@ public class BookServiceImpl implements BookService {
             LocalDate localDate = LocalDate.now();
             Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
             transaction.setTransactionDate(date);
-            transaction.setTransactionAmount(book.getCurrentPrice());
+            transaction.setTransactionAmount(buyingPrice);
             transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
             transactionRepository.save(transaction);
             userRepository.save(user);
@@ -151,33 +160,30 @@ public class BookServiceImpl implements BookService {
             return "User or book not found.";
         }
 
-        if (book.getStatus() == Book.Status.AVAILABLE) {
-            if (user.getFunds() >= book.getCurrentPrice()) {
-                user.setFunds(user.getFunds() + book.getCurrentPrice());
-                book.setStatus(Book.Status.SOLD);
-
-                Transaction transaction = new Transaction();
-                transaction.setTransactionType(Transaction.TransactionType.SELL);
-                transaction.setUser(user);
-                transaction.setBook(book);
-                LocalDate localDate = LocalDate.now();
-                Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-                transaction.setTransactionDate(date);
-                transaction.setTransactionAmount(book.getCurrentPrice());
-                transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-                transactionRepository.save(transaction);
-                book.depreciatePrice();
-
-                userRepository.save(user);
-                bookRepository.save(book);
-
-                return "success";
-            } else {
-                return "Insufficient funds.";
-            }
-        } else {
-            return "Book is not available for sale.";
+        if (!user.getUserId().equals(userId)) {
+            return "Seller does not own the book with the given ID.";
         }
+
+        double sellingPrice = book.getCurrentPrice();
+        user.setFunds(user.getFunds() + sellingPrice);
+        book.depreciatePrice();
+        book.setStatus(Book.Status.AVAILABLE);
+
+        Transaction transaction = new Transaction();
+        transaction.setTransactionType(Transaction.TransactionType.SELL);
+        transaction.setUser(user);
+        transaction.setBook(book);
+        LocalDate localDate = LocalDate.now();
+        Date date = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        transaction.setTransactionDate(date);
+        transaction.setTransactionAmount(sellingPrice);
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transactionRepository.save(transaction);
+
+        userRepository.save(user);
+        bookRepository.save(book);
+
+        return "success";
     }
 
 }
