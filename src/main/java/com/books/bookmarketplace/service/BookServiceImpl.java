@@ -3,10 +3,7 @@ package com.books.bookmarketplace.service;
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.Transaction;
 import com.books.bookmarketplace.entity.User;
-import com.books.bookmarketplace.errorhandler.BookAlreadyExistsException;
-import com.books.bookmarketplace.errorhandler.BookNotFoundException;
-import com.books.bookmarketplace.errorhandler.InvalidEnumException;
-import com.books.bookmarketplace.errorhandler.InventoryFullException;
+import com.books.bookmarketplace.errorhandler.*;
 import com.books.bookmarketplace.repository.BookRepository;
 import com.books.bookmarketplace.repository.TransactionRepository;
 import com.books.bookmarketplace.repository.UserRepository;
@@ -55,9 +52,6 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<Book> getBooksByCategory(String category) {
         Book.Category bookCategory = Book.Category.valueOf(category);
-        if (!isValidCategory(bookCategory)) {
-            throw new InvalidEnumException("Invalid book category: " + bookCategory);
-        }
         return bookRepository.findBooksByCategory(bookCategory);
     }
 
@@ -82,59 +76,33 @@ public class BookServiceImpl implements BookService {
             throw new BookAlreadyExistsException("A book with the same isbn already exists.");
         }
 
-        if (!isValidCategory(newBook.getCategory())) {
-            throw new InvalidEnumException("Invalid book category: " + newBook.getCategory());
-        }
-
-        if (!isValidCondition(newBook.getCondition())) {
-            throw new InvalidEnumException("Invalid book condition: " + newBook.getCondition());
-        }
-
-        if (!isValidStatus(newBook.getStatus())) {
-            throw new InvalidEnumException("Invalid book status: " + newBook.getStatus());
-        }
-
         newBook.setStatus(Book.Status.AVAILABLE);
         return bookRepository.save(newBook);
     }
 
     @Override
     public Book updateBook(Book book, Long id) {
-        if (!isValidCategory(book.getCategory())) {
-            throw new InvalidEnumException("Invalid book category: " + book.getCategory());
-        }
+        Book existingBook = bookRepository.findById(id)
+                .orElseThrow(() -> new BookNotFoundException("Book not found for the given ID: " + id));
 
-        if (!isValidCondition(book.getCondition())) {
-            throw new InvalidEnumException("Invalid book condition: " + book.getCondition());
+        existingBook.setISBN(book.getISBN());
+        existingBook.setAuthor(book.getAuthor());
+        existingBook.setCategory(book.getCategory());
+        existingBook.setCondition(book.getCondition());
+        existingBook.setDescription(book.getDescription());
+        existingBook.setEdition(book.getEdition());
+        existingBook.setConditionDescription(book.getConditionDescription());
+        existingBook.setCurrentPrice(book.getCurrentPrice());
+        existingBook.setOriginalPrice(book.getOriginalPrice());
+        existingBook.setTitle(book.getTitle());
+        List<Transaction> updatedTransactions = new ArrayList<>();
+        for (Transaction transaction : book.getTransactions()) {
+            transaction.setBook(existingBook);
+            updatedTransactions.add(transaction);
         }
-
-        if (!isValidStatus(book.getStatus())) {
-            throw new InvalidEnumException("Invalid book status: " + book.getStatus());
-        }
-        Book existingBook = bookRepository.findById(id).orElse(null);
-
-        if (existingBook != null) {
-            existingBook.setISBN(book.getISBN());
-            existingBook.setAuthor(book.getAuthor());
-            existingBook.setCategory(book.getCategory());
-            existingBook.setCondition(book.getCondition());
-            existingBook.setDescription(book.getDescription());
-            existingBook.setEdition(book.getEdition());
-            existingBook.setConditionDescription(book.getConditionDescription());
-            existingBook.setCurrentPrice(book.getCurrentPrice());
-            existingBook.setOriginalPrice(book.getOriginalPrice());
-            existingBook.setTitle(book.getTitle());
-            List<Transaction> updatedTransactions = new ArrayList<>();
-            for (Transaction transaction : book.getTransactions()) {
-                transaction.setBook(existingBook);
-                updatedTransactions.add(transaction);
-            }
-            existingBook.setTransactions(updatedTransactions);
-            existingBook.setStatus(book.getStatus());
-            return bookRepository.save(existingBook);
-        } else {
-            throw new BookNotFoundException("Book not found for the given ID: " + book.getBookId());
-        }
+        existingBook.setTransactions(updatedTransactions);
+        existingBook.setStatus(book.getStatus());
+        return bookRepository.save(existingBook);
     }
 
     @Override
@@ -145,45 +113,40 @@ public class BookServiceImpl implements BookService {
     }
 
     public String buyBook(Long userId, Long bookId) {
-        User user = userRepository.findById(userId).orElse(null);
-        Book book = bookRepository.findById(bookId).orElse(null);
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new BookNotFoundException("Book not found for the given id: " + bookId));
 
-        if (user == null || book == null) {
-            return "User or book not found.";
+        if (book.getStatus() != Book.Status.AVAILABLE) {
+            throw new ValidationException(Collections.singletonList("Book is not available for purchase."));
         }
 
-        if (book.getStatus() == Book.Status.AVAILABLE && user.getFunds() >= book.getCurrentPrice()) {
-            Double buyingPrice = book.getCurrentPrice();
-            user.setFunds(user.getFunds() - buyingPrice);
-            book.depreciatePrice();
-            book.setStatus(Book.Status.SOLD);
-
-            Transaction transaction = createTransaction(user, book, buyingPrice, Transaction.TransactionType.BUY);
-
-            if (book.getCurrentPrice() <= 0) {
-                book.setStatus(Book.Status.DISCONTINUED);
-            }
-            transactionRepository.save(transaction);
-            userRepository.save(user);
-            bookRepository.save(book);
-
-
-            return "success";
-        } else {
-            return "Insufficient funds or book is not available.";
+        if (user.getFunds() < book.getCurrentPrice()) {
+            throw new ValidationException(Collections.singletonList("Insufficient funds to purchase the book."));
         }
+
+        Double buyingPrice = book.getCurrentPrice();
+        user.setFunds(user.getFunds() - buyingPrice);
+        book.depreciatePrice();
+        book.setStatus(Book.Status.SOLD);
+
+        Transaction transaction = createTransaction(user, book, buyingPrice, Transaction.TransactionType.BUY);
+
+        if (book.getCurrentPrice() <= 0) {
+            book.setStatus(Book.Status.DISCONTINUED);
+        }
+        transactionRepository.save(transaction);
+        userRepository.save(user);
+        bookRepository.save(book);
+
+        return "Success";
     }
 
     public String sellBook(Long userId, Long bookId) {
-        User user = userRepository.findById(userId).orElse(null);
-        Book book = bookRepository.findById(bookId).orElse(null);
-
-        if (user == null || book == null) {
-            return "User or book not found.";
-        }
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new BookNotFoundException("Book not found for the given id: " + bookId));
 
         if (!user.getUserId().equals(userId)) {
-            return "Seller does not own the book with the given ID.";
+            throw new ValidationException(Collections.singletonList("Seller does not own the book with the given ID."));
         }
 
         double sellingPrice = book.getCurrentPrice();
@@ -199,20 +162,17 @@ public class BookServiceImpl implements BookService {
         userRepository.save(user);
         bookRepository.save(book);
 
-        return "success";
+        return "Success";
     }
 
     @Override
     public String sellBookByISBN(Long userId, String isbn) {
-        User user = userRepository.findById(userId).orElse(null);
-        Book book = bookRepository.findBookByISBN(isbn);
-
-        if (user == null || book == null) {
-            return "User or book not found.";
-        }
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
+        Book book = Optional.ofNullable(bookRepository.findBookByISBN(isbn))
+                .orElseThrow(() -> new BookNotFoundException("Book not found for the given ISBN: " + isbn));
 
         if (!book.getStatus().equals(Book.Status.AVAILABLE)) {
-            return "Book is not available for selling.";
+            throw new ValidationException(Collections.singletonList("Book is not available for purchase."));
         }
 
         double sellingPrice = book.getCurrentPrice();
@@ -226,7 +186,7 @@ public class BookServiceImpl implements BookService {
         userRepository.save(user);
         bookRepository.save(book);
 
-        return "success ";
+        return "Success ";
     }
 
     private Transaction createTransaction(User user, Book book, double transactionAmount, Transaction.TransactionType transactionType) {
@@ -240,17 +200,5 @@ public class BookServiceImpl implements BookService {
         transaction.setTransactionAmount(transactionAmount);
         transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
         return transaction;
-    }
-
-    private boolean isValidCategory(Book.Category category) {
-        return Arrays.asList(Book.Category.values()).contains(category);
-    }
-
-    private boolean isValidCondition(Book.Condition condition) {
-        return Arrays.asList(Book.Condition.values()).contains(condition);
-    }
-
-    private boolean isValidStatus(Book.Status status) {
-        return Arrays.asList(Book.Status.values()).contains(status);
     }
 }

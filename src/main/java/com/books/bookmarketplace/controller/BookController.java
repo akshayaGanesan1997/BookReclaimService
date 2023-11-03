@@ -3,7 +3,7 @@ package com.books.bookmarketplace.controller;
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.errorhandler.BookAlreadyExistsException;
 import com.books.bookmarketplace.errorhandler.BookNotFoundException;
-import com.books.bookmarketplace.errorhandler.InvalidEnumException;
+import com.books.bookmarketplace.errorhandler.UserNotFoundException;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.BookService;
 import jakarta.validation.Valid;
@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -89,6 +90,15 @@ public class BookController {
 
     @GetMapping("/getBooksByCategory")
     public ResponseEntity<List<Book>> getBooksByCategory(@RequestParam(name = "category") String category) {
+        if (category.isBlank()) {
+            throw new ValidationException(Collections.singletonList("Category is required"));
+        }
+        List<String> validCategories = Arrays.stream(Book.Category.values())
+                .map(Enum::name)
+                .toList();
+        if (!validCategories.contains(category.toUpperCase())) {
+            throw new ValidationException(Collections.singletonList("Invalid category: " + category.toUpperCase()));
+        }
         try {
             logger.log(Level.INFO, "Fetching all books from category: " + category.toUpperCase());
             List<Book> books = bookService.getBooksByCategory(category.toUpperCase());
@@ -99,7 +109,7 @@ public class BookController {
                 logger.log(Level.INFO, "Retrieved " + books.size() + " books in category: " + category.toUpperCase());
                 return ResponseEntity.ok(books);
             }
-        } catch (InvalidEnumException e) {
+        } catch (ValidationException e) {
             throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -159,7 +169,7 @@ public class BookController {
             Book savedBook = bookService.addBook(book);
             logger.log(Level.INFO, "Added new book: " + savedBook.getTitle());
             return ResponseEntity.ok().body(savedBook);
-        } catch (BookAlreadyExistsException |InvalidEnumException e) {
+        } catch (BookAlreadyExistsException | HttpMessageNotReadableException e) {
             throw e;
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error adding a new user: " + e.getMessage());
@@ -184,7 +194,7 @@ public class BookController {
             Book updatedBook = bookService.updateBook(book, bookId);
             logger.log(Level.INFO, "Updated the book: " + updatedBook.getTitle());
             return ResponseEntity.ok().body(updatedBook);
-        } catch (BookNotFoundException | InvalidEnumException | ValidationException e) {
+        } catch (BookNotFoundException | HttpMessageNotReadableException | ValidationException e) {
             throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -211,41 +221,49 @@ public class BookController {
 
     @PostMapping("/buyBook")
     public ResponseEntity<String> buyBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
-        logger.log(Level.INFO, "User with ID " + userId + " is attempting to buy book with ID " + bookId);
-        String purchaseResult = bookService.buyBook(userId, bookId);
-        if (purchaseResult.equals("success")) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to buy book with ID " + bookId);
+            bookService.buyBook(userId, bookId);
             logger.log(Level.INFO, "User with ID " + userId + " purchased book with ID " + bookId + " successfully.");
             return ResponseEntity.ok("Book purchased successfully.");
-        } else {
-            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + purchaseResult);
-            return ResponseEntity.badRequest().build();
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
-
     }
 
     @PostMapping("/sellBook")
     public ResponseEntity<String> sellBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
-        logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ID " + bookId);
-        String sellResult = bookService.sellBook(userId, bookId);
-        if (sellResult.equals("success")) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ID " + bookId);
+            bookService.sellBook(userId, bookId);
             logger.log(Level.INFO, "User with ID " + userId + " sold book with ID " + bookId + " successfully.");
             return ResponseEntity.ok("Book sold successfully.");
-        } else {
-            logger.log(Level.WARNING, "User with ID " + userId + " failed to sell the book: " + sellResult);
-            return ResponseEntity.badRequest().build();
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
 
     @PostMapping("/sellBookByISBN")
     public ResponseEntity<String> sellBookByISBN(@RequestParam(name = "userId") Long userId, @RequestParam(name = "isbn") String isbn) {
-        logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with isbn " + isbn);
-        String sellResult = bookService.sellBookByISBN(userId, isbn);
-        if (sellResult.equals("success")) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with isbn " + isbn);
+            bookService.sellBookByISBN(userId, isbn);
             logger.log(Level.INFO, "User with ID " + userId + " sold book with isbn " + isbn + " successfully.");
             return ResponseEntity.ok("Book sold successfully.");
-        } else {
-            logger.log(Level.WARNING, "User with ID " + userId + " failed to sell the book: " + sellResult);
-            return ResponseEntity.badRequest().build();
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
 

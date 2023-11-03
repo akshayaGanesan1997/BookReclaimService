@@ -71,8 +71,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Object> handleInvalidEnumException(HttpMessageNotReadableException ex) {
-        String error = ex.getMessage();
+    public ResponseEntity<Object> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        String error = "Invalid enum category. Provide valid enum value which are defined";
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("message", "Enum validation");
         responseBody.put("errors", error);
