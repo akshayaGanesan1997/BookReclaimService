@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * Repository interface for accessing book-related data in the database.
+ */
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {
 

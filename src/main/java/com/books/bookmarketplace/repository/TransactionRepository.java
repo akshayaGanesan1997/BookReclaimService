@@ -8,6 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * Repository interface for accessing transactions-related data in the database.
+ */
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
@@ -16,5 +19,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     @Query("SELECT t.book FROM Transaction t WHERE t.user.userId = :userId AND t.transactionType = 'BUY'")
     List<Book> findPurchasedBooksByUser(Long userId);
-
 }

@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.Date;
 
+/**
+ * A model class representing details of a transaction in the book marketplace application.
+ */
 @Data
 public class TransactionDetails {
     private Long transactionId;
@@ -13,5 +16,4 @@ public class TransactionDetails {
     private Transaction.TransactionStatus status;
     private Transaction.TransactionType transactionType;
     private String transactionNotes;
-
 }

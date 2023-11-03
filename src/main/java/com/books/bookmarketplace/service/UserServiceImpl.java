@@ -3,7 +3,8 @@ package com.books.bookmarketplace.service;
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.Transaction;
 import com.books.bookmarketplace.entity.User;
-import com.books.bookmarketplace.model.BookDetails;
+import com.books.bookmarketplace.errorhandler.UserAlreadyExistsException;
+import com.books.bookmarketplace.errorhandler.UserNotFoundException;
 import com.books.bookmarketplace.model.TransactionDetails;
 import com.books.bookmarketplace.model.UserDetails;
 import com.books.bookmarketplace.repository.TransactionRepository;
@@ -14,9 +15,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing users and user-related operations.
+ */
 @Transactional
 @Service
 public class UserServiceImpl implements UserService {
@@ -40,80 +43,78 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetails getUserById(Long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            return convertToUserDetails(user);
-        }
-        return null;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given ID: " + userId));
+        return convertToUserDetails(user);
     }
 
     @Override
     public UserDetails searchUsersByEMailOrUserName(String keyword) {
-        Optional<User> userOptional = userRepository.findUserByKeyword(keyword);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            return convertToUserDetails(user);
-        }
-        return null;
+        User user = userRepository.findUserByKeyword(keyword)
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given email or username: " + keyword));
+        return convertToUserDetails(user);
     }
 
     @Override
     public User addUser(User user) {
+        User existingUser = userRepository.findByEmailOrUsername(user.getEmail(), user.getUsername());
+        if (existingUser != null) {
+            throw new UserAlreadyExistsException("A user with the same email or username already exists.");
+        }
         return userRepository.save(user);
     }
 
     @Override
     public User updateUser(User user, Long id) {
-        try {
-            User existingUser = userRepository.findById(id).orElse(null);
-            if (existingUser != null) {
-                existingUser.setEmail(user.getEmail());
-                existingUser.setFirstName(user.getFirstName());
-                existingUser.setLastName(user.getLastName());
-                existingUser.setPassword(user.getPassword());
-                existingUser.setPhoneNumber(user.getPhoneNumber());
-                existingUser.setFunds(user.getFunds());
-                existingUser.setUsername(user.getUsername());
-                List<Transaction> updatedTransactions = new ArrayList<>();
-                for (Transaction transaction : user.getTransactions()) {
-                    transaction.setUser(existingUser);
-                    updatedTransactions.add(transaction);
-                }
-                existingUser.setTransactions(updatedTransactions);
-                return userRepository.save(existingUser);
-            } else {
-                throw new IllegalArgumentException("User not found for the given ID: " + user.getUserId());
+
+        User existingUser = userRepository.findById(id).orElse(null);
+        if (existingUser != null) {
+            existingUser.setEmail(user.getEmail());
+            existingUser.setFirstName(user.getFirstName());
+            existingUser.setLastName(user.getLastName());
+            existingUser.setPassword(user.getPassword());
+            existingUser.setPhoneNumber(user.getPhoneNumber());
+            existingUser.setFunds(user.getFunds());
+            existingUser.setUsername(user.getUsername());
+            List<Transaction> updatedTransactions = new ArrayList<>();
+            for (Transaction transaction : user.getTransactions()) {
+                transaction.setUser(existingUser);
+                updatedTransactions.add(transaction);
             }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            existingUser.setTransactions(updatedTransactions);
+            return userRepository.save(existingUser);
+        } else {
+            throw new UserNotFoundException("User not found for the given id: " + id);
         }
+
     }
 
     @Override
     public void deleteUser(Long id) {
-        Optional<User> userOptional = userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            userRepository.deleteById(id);
-        } else {
-            throw new IllegalArgumentException("User not found for the given ID:" + id);
-        }
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
+        userRepository.delete(user);
     }
 
     @Override
     public List<Book> getPurchasedBooksByUser(Long id) {
+        userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
         return transactionRepository.findPurchasedBooksByUser(id);
     }
 
     @Override
     public List<Book> getBooksSoldByUser(Long id) {
+        userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
         return transactionRepository.findBooksSoldByUser(id);
     }
+
 
     @Override
     public User addFundsToUser(Long userId, Double amount) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User with ID " + userId + " not found."));
+                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
         user.setFunds(user.getFunds() + amount);
         return userRepository.save(user);
     }
@@ -128,7 +129,6 @@ public class UserServiceImpl implements UserService {
         userDetails.setPhoneNumber(user.getPhoneNumber());
         userDetails.setFunds(user.getFunds());
 
-        // Convert the lists of transactions and books to their respective DTOs
         List<TransactionDetails> transactionDetails = user.getTransactions().stream()
                 .map(this::convertToTransactionDetails)
                 .collect(Collectors.toList());
@@ -147,27 +147,6 @@ public class UserServiceImpl implements UserService {
         transactionDetails.setTransactionType(transaction.getTransactionType());
 
         return transactionDetails;
-    }
-
-    private BookDetails convertToBookDetails(Book book) {
-        BookDetails bookDetails = new BookDetails();
-        bookDetails.setBookId(book.getBookId());
-        bookDetails.setIsbn(book.getISBN());
-        bookDetails.setTitle(book.getTitle());
-        bookDetails.setAuthor(book.getAuthor());
-        bookDetails.setEdition(book.getEdition());
-        bookDetails.setPublicationYear(book.getPublicationYear());
-        bookDetails.setLanguage(book.getLanguage());
-        bookDetails.setPublisher(book.getPublisher());
-        bookDetails.setOriginalPrice(book.getOriginalPrice());
-        bookDetails.setCurrentPrice(book.getCurrentPrice());
-        bookDetails.setDescription(book.getDescription());
-        bookDetails.setCategory(book.getCategory());
-        bookDetails.setConditionDescription(book.getConditionDescription());
-        bookDetails.setCondition(book.getCondition());
-        bookDetails.setStatus(book.getStatus());
-
-        return bookDetails;
     }
 
 }
