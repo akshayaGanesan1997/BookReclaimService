@@ -1,446 +1,594 @@
-swagger: '2.0'
+swagger: "2.0"
 info:
-  version: 1.0.0
-  title: Book Marketplace API
-  description: API for buying and selling books in the Book Marketplace Application
-basePath: /api
-schemes:
-  - http
-  - https
+  version: "1.0.0"
+  title: "Book Marketplace API"
+  description: "API for managing books in the Book Marketplace application"
+basePath: "/api"
+tags:
+  - name: "Books"
+    description: "Endpoints for managing books"
+  - name: "Users"
+    description: "Endpoints for managing users"
+definitions:
+  Book:
+    type: "object"
+    properties:
+      bookId:
+        type: "integer"
+      ISBN:
+        type: "string"
+      title:
+        type: "string"
+      author:
+        type: "string"
+      edition:
+        type: "integer"
+      publicationYear:
+        type: "integer"
+      language:
+        type: "string"
+      publisher:
+        type: "string"
+      originalPrice:
+        type: "number"
+      currentPrice:
+        type: "number"
+      description:
+        type: "string"
+      category:
+        type: "string"
+      conditionDescription:
+        type: "string"
+      condition:
+        type: "string"
+      status:
+        type: "string"
+  User:
+    type: "object"
+    description: "Represents a user within the marketplace."
+    properties:
+      userId:
+        type: "integer"
+        format: "int64"
+      username:
+        type: "string"
+      email:
+        type: "string"
+      password:
+        type: "string"
+      firstName:
+        type: "string"
+      lastName:
+        type: "string"
+      phoneNumber:
+        type: "string"
+      funds:
+        type: "number"
+        format: "double"
+      transactions:
+        type: "array"
+        items:
+          $ref: "#/definitions/Transaction"
+  Transaction:
+    type: "object"
+    description: "Represents a transaction made within the marketplace."
+    properties:
+      transactionId:
+        type: "integer"
+      user:
+        $ref: "#/definitions/User"
+      book:
+        $ref: "#/definitions/Book"
+      transactionDate:
+        type: "string"
+        format: "date-time"
+      transactionAmount:
+        type: "number"
+      status:
+        type: "string"
+        enum:
+          - "PENDING"
+          - "COMPLETED"
+          - "CANCELLED"
+      transactionNotes:
+        type: "string"
+      transactionType:
+        type: "string"
+        enum:
+          - "BUY"
+          - "SELL"
+  ErrorResponse:
+    type: "object"
+    properties:
+      message:
+        type: "string"
 paths:
-  /users:
+  /books/:
     get:
-      summary: Get all users
+      tags:
+        - "Books"
+      summary: "Retrieve all books"
+      description: "Retrieves a list of all books available in the marketplace."
       responses:
         200:
-          description: Successful response
+          description: "Successful operation"
           schema:
-            type: array
+            type: "array"
             items:
-              $ref: '#/definitions/User'
+              $ref: "#/definitions/Book"
         204:
-          description: No content
-  /users/getUserById:
+          description: "No books found"
+        500:
+          description: "Internal server error"
+  /books/getAvailableBooks:
     get:
-      summary: Get a user by ID
-      parameters:
-        - name: userId
-          in: query
-          description: ID of the user to retrieve
-          required: true
-          type: integer
-          format: int64
+      tags:
+        - "Books"
+      summary: "Retrieve available books"
+      description: "Retrieves a list of available books in the marketplace."
       responses:
         200:
-          description: Successful response
+          description: "Successful operation"
           schema:
-            $ref: '#/definitions/User'
-        404:
-          description: User not found
-  /users/addUser:
-    post:
-      summary: Add a new user
-      parameters:
-        - name: body
-          in: body
-          description: User object to add
-          required: true
-          schema:
-            $ref: '#/definitions/User'
-      responses:
-        200:
-          description: Successful response
-          schema:
-            $ref: '#/definitions/User'
-        400:
-          description: Bad request
-        500:
-          description: Internal server error
-  /users/updateUser:
-    put:
-      summary: Update user details
-      parameters:
-        - name: userId
-          in: query
-          description: ID of the user to update
-          required: true
-          type: integer
-          format: int64
-        - name: body
-          in: body
-          description: Updated user object
-          required: true
-          schema:
-            $ref: '#/definitions/User'
-      responses:
-        200:
-          description: Successful response
-          schema:
-            $ref: '#/definitions/User'
-        400:
-          description: Bad request
-        404:
-          description: User not found
-        500:
-          description: Internal server error
-  /users/deleteUser:
-    delete:
-      summary: Delete a user
-      parameters:
-        - name: userId
-          in: query
-          description: ID of the user to delete
-          required: true
-          type: integer
-          format: int64
-      responses:
-        200:
-          description: User deleted successfully
-        400:
-          description: Bad request
-        500:
-          description: Internal server error
-  /books:
-    get:
-      summary: Get all books
-      responses:
-        200:
-          description: Successful response
-          schema:
-            type: array
+            type: "array"
             items:
-              $ref: '#/definitions/Book'
+              $ref: "#/definitions/Book"
         204:
-          description: No content
-  /getAvailableBooks:
-      get:
-        summary: Get available books
-        responses:
-          200:
-            description: Successful response
-            schema:
-              type: array
-              items:
-                $ref: '#/definitions/Book'
-          204:
-            description: No content
+          description: "No available books found"
+        500:
+          description: "Internal server error"
   /books/getBookById:
     get:
-      summary: Get a book by ID
+      tags:
+        - "Books"
+      summary: "Retrieve a book by ID"
+      description: "Retrieves a book by its ID."
       parameters:
-        - name: bookId
-          in: query
-          description: ID of the book to retrieve
+        - name: "bookId"
+          in: "query"
           required: true
-          type: integer
-          format: int64
+          type: "integer"
+          minimum: 1
       responses:
         200:
-          description: Successful response
+          description: "Successful operation"
           schema:
-            $ref: '#/definitions/Book'
-        404:
-          description: Book not found
+            $ref: "#/definitions/Book"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
   /books/getBooksByCategory:
     get:
-      summary: Get books by category
+      tags:
+        - "Books"
+      summary: "Retrieve books by category"
+      description: "Retrieves a list of books in the specified category."
       parameters:
-        - name: category
-          in: query
-          description: Category of books to retrieve
+        - name: "category"
+          in: "query"
           required: true
-          type: string
+          type: "string"
       responses:
         200:
-          description: Successful response
+          description: "Successful operation"
           schema:
-            type: array
+            type: "array"
             items:
-              $ref: '#/definitions/Book'
+              $ref: "#/definitions/Book"
         204:
-          description: No content
+          description: "No books found in the specified category"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
   /books/getBookByISBN:
     get:
-      summary: Get a book by ISBN
+      tags:
+        - "Books"
+      summary: "Retrieve a book by ISBN"
+      description: "Retrieves a book by its ISBN."
       parameters:
-        - name: isbn
-          in: query
-          description: ISBN of the book to retrieve
+        - name: "isbn"
+          in: "query"
           required: true
-          type: string
+          type: "string"
       responses:
         200:
-          description: Successful response
+          description: "Successful operation"
           schema:
-            $ref: '#/definitions/Book'
-        404:
-          description: Book not found
+            $ref: "#/definitions/Book"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
   /books/searchBooks:
     get:
-      summary: Search for books by keyword
+      tags:
+        - "Books"
+      summary: "Search for books by keyword"
+      description: "Searches for books based on a keyword in their title or author."
+      parameters:
+        - name: "keyword"
+          in: "query"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Book"
+        204:
+          description: "No books found with the specified keyword"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/addBook:
+    post:
+      tags:
+        - "Books"
+      summary: "Add a new book"
+      description: "Adds a new book to the marketplace."
+      parameters:
+        - name: "book"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Book"
+      responses:
+        200:
+          description: "Book added successfully"
+          schema:
+            $ref: "#/definitions/Book"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/updateBook:
+    put:
+      tags:
+        - "Books"
+      summary: "Update a book"
+      description: "Updates an existing book."
+      parameters:
+        - name: "bookId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+        - name: "book"
+          in: "body"
+          required: true
+          schema:
+            $ref: "#/definitions/Book"
+      responses:
+        200:
+          description: "Book updated successfully"
+          schema:
+            $ref: "#/definitions/Book"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/deleteBook:
+    delete:
+      tags:
+        - "Books"
+      summary: "Delete a book by ID"
+      description: "Deletes a book by its ID."
+      parameters:
+        - name: "bookId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+      responses:
+        200:
+          description: "Book deleted successfully"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/buyBook:
+    post:
+      tags:
+        - "Books"
+      summary: "Purchase a book"
+      description: "Allows a user to purchase a book by book ID."
+      parameters:
+        - name: "userId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+        - name: "bookId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+      responses:
+        200:
+          description: "Book purchased successfully"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/sellBook:
+    post:
+      tags:
+        - "Books"
+      summary: "Sell a book"
+      description: "Allows a user to sell a book by book ID."
+      parameters:
+        - name: "userId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+        - name: "bookId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+      responses:
+        200:
+          description: "Book sold successfully"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /books/sellBookByISBN:
+    post:
+      tags:
+        - "Books"
+      summary: "Sell a book by ISBN"
+      description: "Allows a user to sell a book by ISBN."
+      parameters:
+        - name: "userId"
+          in: "query"
+          required: true
+          type: "integer"
+          minimum: 1
+        - name: "isbn"
+          in: "query"
+          required: true
+          type: "string"
+      responses:
+        200:
+          description: "Book sold successfully"
+        400:
+          description: "Bad request"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+        500:
+          description: "Internal server error"
+  /users/:
+    get:
+      tags:
+        - "Users"
+      description: "Retrieve all users."
+      responses:
+        200:
+          description: "List of users."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/User"
+        204:
+          description: "No users found."
+        500:
+          description: "Internal Server Error."
+  /users/getUserById:
+    get:
+      tags:
+        - "Users"
+      description: "Retrieve a user by their ID."
+      parameters:
+        - name: userId
+          in: query
+          type: integer
+          format: int64
+          description: "Unique identifier for the user."
+      responses:
+        200:
+          description: "User details."
+          schema:
+            $ref: "#/definitions/User"
+        400:
+          description: "Invalid user ID."
+        404:
+          description: "User not found."
+        500:
+          description: "Internal Server Error."
+  /users/searchUsers:
+    get:
+      tags:
+        - "Users"
+      description: "Search for a user by username or email."
       parameters:
         - name: keyword
           in: query
-          description: Search keyword to find books
-          required: true
           type: string
+          description: "Search term for username or email."
       responses:
         200:
-          description: Successful response
+          description: "User details."
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/Book'
-        204:
-          description: No content
-  /books/addBook:
+            $ref: "#/definitions/User"
+        400:
+          description: "Invalid search term."
+        404:
+          description: "User not found."
+        500:
+          description: "Internal Server Error."
+  /users/addUser:
     post:
-      summary: Add a new book for sale
+      tags:
+        - "Users"
+      description: "Add a new user."
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
-        - name: body
+        - name: user
           in: body
-          description: Book object to add
-          required: true
           schema:
-            $ref: '#/definitions/Book'
+            $ref: "#/definitions/User"
       responses:
         200:
-          description: Successful response
+          description: "Newly added user."
           schema:
-            $ref: '#/definitions/Book'
+            $ref: "#/definitions/User"
         400:
-          description: Bad request
+          description: "Validation error."
+        409:
+          description: "User already exists."
         500:
-          description: Internal server error
-  /books/updateBook:
+          description: "Internal Server Error."
+  /users/updateUser:
     put:
-      summary: Update book details
+      tags:
+        - "Users"
+      description: "Update an existing user."
+      consumes:
+        - application/json
+      produces:
+        - application/json
       parameters:
-        - name: bookId
+        - name: userId
           in: query
-          description: ID of the book to update
-          required: true
           type: integer
           format: int64
-        - name: body
+          description: "Unique identifier for the user."
+        - name: user
           in: body
-          description: Updated book object
-          required: true
           schema:
-            $ref: '#/definitions/Book'
+            $ref: "#/definitions/User"
       responses:
         200:
-          description: Successful response
+          description: "Updated user details."
           schema:
-            $ref: '#/definitions/Book'
+            $ref: "#/definitions/User"
         400:
-          description: Bad request
+          description: "Invalid user ID or validation error."
         404:
-          description: Book not found
+          description: "User not found."
         500:
-          description: Internal server error
-  /books/deleteBook:
+          description: "Internal Server Error."
+  /users/deleteUser:
     delete:
-      summary: Delete a book
+      tags:
+        - "Users"
+      description: "Delete a user by their ID."
       parameters:
-        - name: bookId
+        - name: userId
           in: query
-          description: ID of the book to delete
-          required: true
           type: integer
           format: int64
+          description: "Unique identifier for the user."
       responses:
         200:
-          description: Book deleted successfully
+          description: "User deleted successfully."
         400:
-          description: Bad request
+          description: "Invalid user ID."
+        404:
+          description: "User not found."
         500:
-          description: Internal server error
-  /transactions:
+          description: "Internal Server Error."
+  /users/purchasedBooks:
     get:
-      summary: Get all transactions
+      tags:
+        - "Users"
+      description: "Retrieve books purchased by a user."
+      parameters:
+        - name: userId
+          in: query
+          type: integer
+          format: int64
+          description: "Unique identifier for the user."
       responses:
         200:
-          description: Successful response
+          description: "List of purchased books."
           schema:
-            type: array
+            type: "array"
             items:
-              $ref: '#/definitions/Transaction'
-        204:
-          description: No content
-  /transactions/getTransactionById:
+              $ref: "#/definitions/Book"
+        400:
+          description: "Invalid user ID."
+        404:
+          description: "No purchased books found."
+        500:
+          description: "Internal Server Error."
+  /users/booksSoldByUser:
     get:
-      summary: Get a transaction by ID
+      tags:
+        - "Users"
+      description: "Retrieve books sold by a user."
       parameters:
-        - name: transactionId
+        - name: userId
           in: query
-          description: ID of the transaction to retrieve
-          required: true
           type: integer
           format: int64
+          description: "Unique identifier for the user."
       responses:
         200:
-          description: Successful response
+          description: "List of books sold."
           schema:
-            $ref: '#/definitions/Transaction'
-        404:
-          description: Transaction not found
-  /transactions/addTransaction:
-    post:
-      summary: Add a new transaction
-      parameters:
-        - name: body
-          in: body
-          description: Transaction object to add
-          required: true
-          schema:
-            $ref: '#/definitions/Transaction'
-      responses:
-        200:
-          description: Successful response
-          schema:
-            $ref: '#/definitions/Transaction'
+            type: "array"
+            items:
+              $ref: "#/definitions/Book"
         400:
-          description: Bad request
+          description: "Invalid user ID."
+        404:
+          description: "No books sold by the user."
         500:
-          description: Internal server error
-  /transactions/updateTransaction:
+          description: "Internal Server Error."
+  /users/addFunds:
     put:
-      summary: Update transaction details
+      tags:
+        - "Users"
+      description: "Add funds to a user's account."
       parameters:
-        - name: transactionId
+        - name: userId
           in: query
-          description: ID of the transaction to update
-          required: true
           type: integer
           format: int64
-        - name: body
-          in: body
-          description: Updated transaction object
-          required: true
-          schema:
-            $ref: '#/definitions/Transaction'
+          description: "Unique identifier for the user."
+        - name: funds
+          in: query
+          type: number
+          format: double
+          description: "Amount to add to the user's funds."
       responses:
         200:
-          description: Successful response
+          description: "Updated user details with added funds."
           schema:
-            $ref: '#/definitions/Transaction'
+            $ref: "#/definitions/User"
         400:
-          description: Bad request
+          description: "Invalid user ID or amount."
         404:
-          description: Transaction not found
+          description: "User not found."
         500:
-          description: Internal server error
-  /transactions/deleteTransaction:
-    delete:
-      summary: Delete a transaction
-      parameters:
-        - name: transactionId
-          in: query
-          description: ID of the transaction to delete
-          required: true
-          type: integer
-          format: int64
-      responses:
-        200:
-          description: Transaction deleted successfully
-        400:
-          description: Bad request
-        500:
-          description: Internal server error
-definitions:
-  User:
-    type: object
-    properties:
-      userId:
-        type: integer
-        format: int64
-      username:
-        type: string
-      email:
-        type: string
-      password:
-        type: string
-      firstName:
-        type: string
-      lastName:
-        type: string
-      phoneNumber:
-        type: string
-      booksForSale:
-        type: array
-        items:
-          $ref: '#/definitions/Book'
-      purchasedBooks:
-        type: array
-        items:
-          $ref: '#/definitions/Book'
-      purchasedTransactions:
-        type: array
-        items:
-          $ref: '#/definitions/Transaction'
-      soldTransactions:
-        type: array
-        items:
-          $ref: '#/definitions/Transaction'
-      funds:
-        type: number
-        format: double
-  Book:
-    type: object
-    properties:
-      bookId:
-        type: integer
-        format: int64
-      ISBN:
-        type: string
-      title:
-        type: string
-      author:
-        type: string
-      edition:
-        type: integer
-      publicationYear:
-        type: integer
-      language:
-        type: string
-      publisher:
-        type: string
-      originalPrice:
-        type: number
-        format: double
-      currentPrice:
-        type: number
-        format: double
-      description:
-        type: string
-      category:
-        type: string
-      conditionDescription:
-        type: string
-      condition:
-        type: string
-      status:
-        type: string
-  Transaction:
-    type: object
-    properties:
-      transactionId:
-        type: integer
-        format: int64
-      seller:
-        $ref: '#/definitions/User'
-      buyer:
-        $ref: '#/definitions/User'
-      book:
-        $ref: '#/definitions/Book'
-      transactionDate:
-        type: string
-        format: date
-      transactionAmount:
-        type: number
-        format: double
-      status:
-        type: string
-      transactionNotes:
-        type: string
+          description: "Internal Server Error."
