@@ -13,6 +13,9 @@ import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
+/**
+ * Entity class representing a Transaction in the book marketplace application.
+ */
 @Entity
 @Data
 @NoArgsConstructor

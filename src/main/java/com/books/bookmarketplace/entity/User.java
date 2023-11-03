@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
+/**
+ * Entity class representing a User in the book marketplace application.
+ */
 @Entity
 @Data
 @NoArgsConstructor

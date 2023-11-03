@@ -1,14 +1,17 @@
 package com.books.bookmarketplace.controller;
 
 import com.books.bookmarketplace.entity.Book;
+import com.books.bookmarketplace.errorhandler.BookAlreadyExistsException;
+import com.books.bookmarketplace.errorhandler.BookNotFoundException;
+import com.books.bookmarketplace.errorhandler.UserNotFoundException;
 import com.books.bookmarketplace.errorhandler.ValidationException;
 import com.books.bookmarketplace.service.BookService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Controller class for managing book-related operations.
+ * This class handles requests related to books,
+ * including retrieving, adding, updating, selling, buying and deleting books.
+ */
 @RestController
 @RequestMapping("/books")
 public class BookController {
@@ -35,83 +43,102 @@ public class BookController {
 
     @GetMapping("/")
     public ResponseEntity<List<Book>> getAllBooks() {
-        List<Book> books = bookService.getAllBooks();
-        if (books.isEmpty()) {
-            return ResponseEntity.noContent().build();
+        try {
+            List<Book> books = bookService.getAllBooks();
+            if (books.isEmpty()) {
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.ok().body(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.ok().body(books);
     }
 
     @GetMapping("/getAvailableBooks")
     public ResponseEntity<List<Book>> getAvailableBooks() {
-        logger.log(Level.INFO, "Fetching all available books");
-        List<Book> books = bookService.getAvailableBooks();
-        if (books.isEmpty()) {
-            logger.log(Level.INFO, "No books available");
-            return ResponseEntity.noContent().build();
-        } else {
-            logger.log(Level.INFO, "Retrieved " + books.size() + " available books");
-            return ResponseEntity.ok(books);
+        try {
+            logger.log(Level.INFO, "Fetching all available books");
+            List<Book> books = bookService.getAvailableBooks();
+            if (books.isEmpty()) {
+                logger.log(Level.INFO, "No books available");
+                return ResponseEntity.noContent().build();
+            } else {
+                logger.log(Level.INFO, "Retrieved " + books.size() + " available books");
+                return ResponseEntity.ok().body(books);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/getBookById")
-    public ResponseEntity<Book> getBookById(@RequestParam(name = "bookId") @Positive Long bookId) {
+    public ResponseEntity<Book> getBookById(@Valid @RequestParam(name = "bookId") @Positive Long bookId) {
         if (bookId == null || bookId <= 0) {
             throw new ValidationException(Collections.singletonList("Invalid book ID. Please provide a positive numeric value."));
         }
-        logger.log(Level.INFO, "Fetching book with ID: " + bookId);
-        Book book = bookService.getBookById(bookId);
-        if (book != null) {
+        try {
+            logger.log(Level.INFO, "Fetching book with ID: " + bookId);
+            Book book = bookService.getBookById(bookId);
             logger.log(Level.INFO, "Retrieved book: " + book.getTitle());
             return ResponseEntity.ok().body(book);
-        } else {
-            logger.log(Level.WARNING, "Book with ID " + bookId + " not found.");
-            return ResponseEntity.notFound().build();
+        } catch (BookNotFoundException | ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/getBooksByCategory")
     public ResponseEntity<List<Book>> getBooksByCategory(@RequestParam(name = "category") String category) {
+        if (category.isBlank()) {
+            throw new ValidationException(Collections.singletonList("Category is required"));
+        }
         List<String> validCategories = Arrays.stream(Book.Category.values())
                 .map(Enum::name)
                 .toList();
-
         if (!validCategories.contains(category.toUpperCase())) {
             throw new ValidationException(Collections.singletonList("Invalid category: " + category.toUpperCase()));
         }
-
-        logger.log(Level.INFO, "Fetching all books from category: " + category.toUpperCase());
-        List<Book> books = bookService.getBooksByCategory(category.toUpperCase());
-        if (books.isEmpty()) {
-            logger.log(Level.INFO, "No books found in category: " + category.toUpperCase());
-            return ResponseEntity.noContent().build();
-        } else {
-            logger.log(Level.INFO, "Retrieved " + books.size() + " books in category: " + category.toUpperCase());
-            return ResponseEntity.ok(books);
+        try {
+            logger.log(Level.INFO, "Fetching all books from category: " + category.toUpperCase());
+            List<Book> books = bookService.getBooksByCategory(category.toUpperCase());
+            if (books.isEmpty()) {
+                logger.log(Level.INFO, "No books found in category: " + category.toUpperCase());
+                return ResponseEntity.noContent().build();
+            } else {
+                logger.log(Level.INFO, "Retrieved " + books.size() + " books in category: " + category.toUpperCase());
+                return ResponseEntity.ok(books);
+            }
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/getBookByISBN")
     public ResponseEntity<Book> getBookByISBN(@RequestParam(name = "isbn") String isbn) {
+        if (isbn.isBlank()) {
+            throw new ValidationException(Collections.singletonList("ISBN is required"));
+        }
         try {
             logger.log(Level.INFO, "Fetching book with ISBN: " + isbn);
             Book book = bookService.getBookByISBN(isbn);
-            if (book != null) {
-                logger.log(Level.INFO, "Retrieved book: " + book.getTitle());
-                return ResponseEntity.ok().body(book);
-            } else {
-                logger.log(Level.WARNING, "Book with ISBN " + isbn + " not found.");
-                return ResponseEntity.notFound().build();
-            }
+            logger.log(Level.INFO, "Retrieved book: " + book.getTitle());
+            return ResponseEntity.ok().body(book);
+        } catch (BookNotFoundException | ValidationException e) {
+            throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error fetching book with ISBN: " + isbn, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
     }
 
     @GetMapping("/searchBooks")
-    public ResponseEntity<List<Book>> searchBooks(@RequestParam(name = "keyword") @NotBlank(message = "Search term cannot be blank") String keyword) {
+    public ResponseEntity<List<Book>> searchBooks(@RequestParam(name = "keyword") String keyword) {
+        if (keyword.isBlank()) {
+            throw new ValidationException(Collections.singletonList("Search term cannot be blank."));
+        }
         try {
             logger.log(Level.INFO, "Fetching all books with keyword: " + keyword);
             List<Book> books = bookService.searchBooks(keyword);
@@ -122,8 +149,9 @@ public class BookController {
                 logger.log(Level.INFO, "Retrieved " + books.size() + " books with keyword: " + keyword);
                 return ResponseEntity.ok(books);
             }
+        } catch (ValidationException e) {
+            throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error fetching book with keyword: " + keyword, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -141,10 +169,13 @@ public class BookController {
             Book savedBook = bookService.addBook(book);
             logger.log(Level.INFO, "Added new book: " + savedBook.getTitle());
             return ResponseEntity.ok().body(savedBook);
+        } catch (BookAlreadyExistsException | HttpMessageNotReadableException e) {
+            throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error occurred while adding a book: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error adding a new user: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
     }
 
     @PutMapping("/updateBook")
@@ -163,10 +194,12 @@ public class BookController {
             Book updatedBook = bookService.updateBook(book, bookId);
             logger.log(Level.INFO, "Updated the book: " + updatedBook.getTitle());
             return ResponseEntity.ok().body(updatedBook);
+        } catch (BookNotFoundException | HttpMessageNotReadableException | ValidationException e) {
+            throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error occurred while updating a book: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+
     }
 
     @DeleteMapping("/deleteBook")
@@ -179,9 +212,10 @@ public class BookController {
             bookService.deleteBook(bookId);
             logger.log(Level.INFO, "Book with ID " + bookId + " deleted successfully.");
             return ResponseEntity.ok("Book with ID " + bookId + " deleted successfully.");
+        } catch (BookNotFoundException | ValidationException e) {
+            throw e;
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Error occurred while deleting the book with ID " + bookId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while deleting the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -189,17 +223,15 @@ public class BookController {
     public ResponseEntity<String> buyBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
         try {
             logger.log(Level.INFO, "User with ID " + userId + " is attempting to buy book with ID " + bookId);
-            String purchaseResult = bookService.buyBook(userId, bookId);
-            if (purchaseResult.equals("success")) {
-                logger.log(Level.INFO, "User with ID " + userId + " purchased book with ID " + bookId + " successfully.");
-                return ResponseEntity.ok("Book purchased successfully.");
-            } else {
-                logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + purchaseResult);
-                return ResponseEntity.badRequest().build();
-            }
+            bookService.buyBook(userId, bookId);
+            logger.log(Level.INFO, "User with ID " + userId + " purchased book with ID " + bookId + " successfully.");
+            return ResponseEntity.ok("Book purchased successfully.");
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "An error occurred: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
 
@@ -207,17 +239,32 @@ public class BookController {
     public ResponseEntity<String> sellBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
         try {
             logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ID " + bookId);
-            String sellResult = bookService.sellBook(userId, bookId);
-            if (sellResult.equals("success")) {
-                logger.log(Level.INFO, "User with ID " + userId + " sold book with ID " + bookId + " successfully.");
-                return ResponseEntity.ok("Book sold successfully.");
-            } else {
-                logger.log(Level.WARNING, "User with ID " + userId + " failed to sell the book: " + sellResult);
-                return ResponseEntity.badRequest().build();
-            }
+            bookService.sellBook(userId, bookId);
+            logger.log(Level.INFO, "User with ID " + userId + " sold book with ID " + bookId + " successfully.");
+            return ResponseEntity.ok("Book sold successfully.");
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "An error occurred: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
         }
     }
+
+    @PostMapping("/sellBookByISBN")
+    public ResponseEntity<String> sellBookByISBN(@RequestParam(name = "userId") Long userId, @RequestParam(name = "isbn") String isbn) {
+        try {
+            logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with isbn " + isbn);
+            bookService.sellBookByISBN(userId, isbn);
+            logger.log(Level.INFO, "User with ID " + userId + " sold book with isbn " + isbn + " successfully.");
+            return ResponseEntity.ok("Book sold successfully.");
+        } catch (BookNotFoundException | UserNotFoundException | ValidationException e) {
+            logger.log(Level.WARNING, "User with ID " + userId + " failed to purchase the book: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "An error occurred while processing the request.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred.");
+        }
+    }
+
 }
