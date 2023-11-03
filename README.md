@@ -3,135 +3,113 @@
 
 ![Java](https://img.shields.io/badge/Java-11-brightgreen)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.5.4-brightgreen)
-![Database](https://img.shields.io/badge/Database-Your%20Database%20Name-blue)
+![Database](https://img.shields.io/badge/MySQL-lightgrey?logo=mysql&style=plastic&logoColor=white&labelColor=blue)
 
-The Book Marketplace Application is a Java-based web application developed using Spring Boot. It provides a platform for buying and selling books across various categories. Users can register, list books for sale, search for books, and perform transactions.
+# Table of Contents
+1. [Book Marketplace Application](#book-marketplace-application)
+   - [Overview](#overview)
+   - [Features](#features)
+   - [Endpoints](#endpoints)
+      - [User Management](#user-management)
+      - [Book Management](#book-management)
+2. [Technologies Used](#technologies-used)
+3. [Project Structure](#project-structure)
+4. [Custom Exceptions](#custom-exceptions)
+5. [Exception Handling](#exception-handling)
+6. [API Documentation](#api-documentation)
 
-## Table of Contents
+## Overview
 
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Database](#database)
-- [Error Handling](#error-handling)
-- [Contributing](#contributing)
-- [License](#license)
+The Book Marketplace Application is a web-based platform that enables users to buy and sell books. It offers a range of features for managing user accounts, listing books for sale, purchasing books, and handling various book-related operations. This README provides an in-depth overview of the application's capabilities, components, and usage.
 
 ## Features
 
-- **User Registration and Authentication**: Users can create accounts and log in securely.
+The Book Marketplace Application offers the following key features:
 
-- **Listing Books for Sale**: Sellers can list their books for sale with detailed information, including title, author, price, and condition.
+- User Management:
+  - Retrieve all users.
+  - Retrieve a user by their ID.
+  - Search for a user by username or email.
+  - Add a new user.
+  - Update an existing user.
+  - Delete a user by their ID.
+  - Retrieve books purchased by a user.
+  - Retrieve books sold by a user.
+  - Add funds to a user's account.
 
-- **Search for Books**: Users can search for books by various criteria, including category, title, author, ISBN, and keyword.
+- Book Management:
+  - Retrieve all books or books matching specific criteria.
+  - Retrieve a book by its ISBN.
+  - Search for books based on a keyword.
+  - Add a new book to the marketplace.
+  - Update an existing book.
+  - Delete a book by its ID.
+  - Purchase a book by a user.
+  - Sell a book by a user.
+  - Sell a book by ISBN.
 
-- **Buy and Sell Books**: The platform facilitates buying and selling books through user-friendly transactions.
+## Endpoints
 
-- **User Funds Management**: Users can manage their funds for buying books.
+### User Management
 
-- **Validation and Error Handling**: Comprehensive validation and error handling for a smooth user experience.
+- **Retrieve All Users**: GET `/users/` - Retrieve a list of all users.
+- **Retrieve User by ID**: GET `/users/getUserById?userId={id}` - Retrieve a user by their unique ID.
+- **Search Users**: GET `/users/searchUsers?keyword={searchTerm}` - Search for a user by username or email.
+- **Add User**: POST `/users/addUser` - Register a new user.
+- **Update User**: PUT `/users/updateUser?userId={id}` - Update an existing user.
+- **Delete User**: DELETE `/users/deleteUser?userId={id}` - Delete a user by their ID.
+- **Retrieve Purchased Books**: GET `/users/purchasedBooks?userId={id}` - Retrieve books purchased by a user.
+- **Retrieve Books Sold by User**: GET `/users/booksSoldByUser?userId={id}` - Retrieve books sold by a user.
+- **Add Funds to User's Account**: PUT `/users/addFunds?userId={id}&funds={amount}` - Add funds to a user's account.
 
-## Prerequisites
+### Book Management
 
-Before you begin, ensure you have met the following requirements:
+- **Retrieve All Books**: GET `/books/` - Retrieve a list of all books or books matching specific criteria.
+- **Retrieve Book by ISBN**: GET `/books/getBookByISBN?isbn={isbn}` - Retrieve a book by its ISBN.
+- **Search Books**: POST `/books/searchBooks?keyword={searchTerm}` - Search for books based on a keyword.
+- **Add Book**: POST `/books/addBook` - List a new book in the marketplace.
+- **Update Book**: PUT `/books/updateBook?bookId={id}` - Update an existing book.
+- **Delete Book**: DELETE `/books/deleteBook?bookId={id}` - Delete a book by its ID.
+- **Buy Book**: POST `/books/buyBook` - Purchase a book by a user.
+- **Sell Book**: POST `/books/sellBook` - Sell a book by a user.
+- **Sell Book by ISBN**: POST `/books/sellBookByISBN` - Sell a book by its ISBN.
 
-- **Java 11**: You should have Java 11 or later installed.
+## Technologies Used
 
-- **Spring Boot 2.5.4**: This project is built using Spring Boot, version 2.5.4.
+- **Java**: The primary programming language.
+- **Spring Boot**: The framework for building Java applications.
+- **Spring Data JPA**: For simplified data access and database interaction.
+- **Spring MVC**: For building web applications and RESTful APIs.
+- **Lombok**: To reduce boilerplate code.
+- **Restful API**
+- **MySQL**
 
-- **Database**: You need a database for storing book and user information. You can configure the database connection in the `application.properties` file.
+## Project Structure
 
-- **Maven**: Maven is used for building and managing dependencies.
+The application is organized as follows:
 
-## Installation
+- `com.books.bookmarketplace.controller`: Contains controller classes for handling HTTP requests and defining API endpoints.
+- `com.books.bookmarketplace.entity`: Defines JPA entity classes for users, books, and transactions.
+- `com.books.bookmarketplace.model`: Defines model classes for simplified data representation.
+- `com.books.bookmarketplace.repository`: Provides repository interfaces for database operations.
+- `com.books.bookmarketplace.errorhandler`: Contains custom exception classes and global exception handling.
+- `resources`: Configuration files, including application properties and database setup.
 
-1. Clone the repository:
+## Custom Exceptions
 
-   ```bash
-   git clone https://github.com/your-username/BookMarketplace.git
-   ```
+The application includes custom exception classes with specific purposes:
 
-2. Navigate to the project directory:
+- `UserNotFoundException`: Thrown when a user is not found.
+- `UserAlreadyExistsException`: Thrown when a user already exists.
+- `BookNotFoundException`: Thrown when a book is not found.
+- `BookAlreadyExistsException`: Thrown when a book already exists.
+- `InventoryFullException`: Thrown when the inventory is full.
+- `ValidationException`: Thrown for validation errors.
 
-   ```bash
-   cd BookMarketplace
-   ```
+## Exception Handling
 
-3. Build the project:
-
-   ```bash
-   mvn clean install
-   ```
-
-4. Run the application:
-
-   ```bash
-   java -jar target/BookMarketPlaceApplication.jar
-   ```
-
-## Usage
-
-- Access the application in your web browser at `http://localhost:8080`.
-
-## API Endpoints
-
-This application exposes a set of RESTful API endpoints for various operations. The following are some of the key endpoints:
-
-### Books
-
-- `GET /api/books`: Get all books.
-- `GET /api/books/getAvailableBooks`: Get available books.
-- `GET /api/books/getBookById`: Get a book by ID.
-- `GET /api/books/getBooksByCategory`: Get books by category.
-- `GET /api/books/getBookByISBN`: Get a book by ISBN.
-- `GET /api/books/searchBooks`: Search for books by keyword.
-- `POST /api/books/addBook`: Add a new book for sale.
-- `PUT /api/books/updateBook`: Update book details.
-- `DELETE /api/books/deleteBook`: Delete a book.
-
-### Users
-
-- `GET /api/users`: Get all users.
-- `GET /api/users/getUserById`: Get a user by ID.
-- `POST /api/users/addUser`: Add a new user.
-- `PUT /api/users/updateUser`: Update user details.
-- `DELETE /api/users/deleteUser`: Delete a user.
-
-### Transactions
-
-- `GET /api/transactions`: Get all transactions.
-- `GET /api/transactions/getTransactionById`: Get a transaction by ID.
-- `POST /api/transactions/addTransaction`: Add a new transaction.
-- `PUT /api/transactions/updateTransaction`: Update transaction details.
-- `DELETE /api/transactions/deleteTransaction`: Delete a transaction.
+The `GlobalExceptionHandler` class handles exceptions and provides meaningful error responses. It maps different exceptions to appropriate HTTP status codes and custom error messages.
 
 ## API Documentation
 
 The API is documented using Swagger, which provides interactive documentation for all endpoints in swagger.yml file.
-
-## Database
-
-This application uses a database to store book and user information. You can configure the database connection in the `application.properties` file.
-
-## Error Handling
-
-Errors in the Book Marketplace Application are handled using a global exception handler, `GlobalExceptionHandler`. This component provides customized responses for specific error scenarios.
-
-### Validation Errors
-
-Validation errors are handled using the `ValidationException` class. When a validation error occurs, the `handleValidationException` method in `GlobalExceptionHandler` is triggered. It returns a `400 Bad Request` response with details about the validation errors.
-
-### Invalid Enum Values
-
-Invalid enum values are handled using the `InvalidEnumException` class. In cases where an invalid enum value is provided in a request, the `handleInvalidEnumException` method in `GlobalExceptionHandler` returns a `400 Bad Request` response with a message indicating the presence of an invalid enum value.
-
-### Other Errors
-
-For other unhandled exceptions, the global exception handler returns a `500 Internal Server Error` response with a general "Internal Server Error" message.
-
-Customize error handling further in the `GlobalExceptionHandler` class to meet the specific needs of your application.
-
-Please note that error responses may include additional details to aid in debugging and troubleshooting.
-
