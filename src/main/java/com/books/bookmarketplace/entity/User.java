@@ -1,16 +1,16 @@
 /**
  * User.java:
- * 
+ * <p>
  * Defines the "User" entity class for a book marketplace application.
  * It represents users within the marketplace and includes essential user information such as
  * a unique identifier, username, email, password, first name, last name, phone number, and available funds.
- *
+ * <p>
  * Key Features:
- * - Annotated with @Entity to indicate it's a persistent entity in a database.
+ * - Annotated with @Entity and @Table annotations to indicate it's a persistent entity in a database.
  * - Utilizes Lombok annotations for generating common methods like getters, setters, and constructors.
  * - Defines validation constraints using Jakarta Bean Validation annotations for various user fields.
  * - Establishes a one-to-many relationship with the "Transaction" entity, representing user transaction history.
- *
+ * <p>
  * The class serves as the blueprint for storing and managing user data in the application's database.
  */
 
@@ -38,32 +38,36 @@ import java.util.List;
 public class User {
     @Id // Indicates that the following field is the primary key for the table.
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Specifies the strategy for generating primary key values.
-    private Long userId; // Unique identifier for each user.
+    private Long userId;
 
     @NotBlank(message = "Username is required") // Specifies that the username field must not be blank.
-    private String username; // The username of the user.
+    private String username;
 
     @Email(message = "Invalid email format") // Specifies that the email field must be in a valid email format.
     @NotBlank(message = "Email is required") // Specifies that the email field must not be blank.
-    private String email; // The email address of the user.
+    private String email;
 
-    @Size(min = 6, message = "Password must be at least 6 characters") // Specifies the minimum size constraint for the password.
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    // Specifies the minimum size constraint for the password.
     @NotBlank(message = "Password is required") // Specifies that the password field must not be blank.
-    private String password; // The password for the user.
+    private String password;
 
     @NotBlank(message = "First name is required") // Specifies that the first name field must not be blank.
-    private String firstName; // The first name of the user.
+    private String firstName;
 
     @NotBlank(message = "Last name is required") // Specifies that the last name field must not be blank.
-    private String lastName; // The last name of the user.
+    private String lastName;
 
-    @Pattern(regexp = "\\d{10}", message = "Phone number must be a 10-digit number") // Specifies a regular expression pattern for the phone number.
-    private String phoneNumber; // The phone number of the user.
+    @Pattern(regexp = "\\d{10}", message = "Phone number must be a 10-digit number")
+    // Specifies a regular expression pattern for the phone number.
+    private String phoneNumber;
 
     @NotNull
-    @DecimalMin(value = "0.0", message = "Funds must be a non-negative value") // Specifies that the funds field must be a non-negative decimal.
-    private Double funds; // Represents the amount of funds the user has.
+    @DecimalMin(value = "0.0", message = "Funds must be a non-negative value")
+    // Specifies that the funds field must be a non-negative decimal.
+    private Double funds;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL) // Indicates a one-to-many relationship with the Transaction entity.
-    private List < Transaction > transactions = new ArrayList < > (); // Represents the list of transactions associated with the user.
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    // Indicates a one-to-many relationship with the Transaction entity.
+    private List<Transaction> transactions = new ArrayList<>(); // Represents the list of transactions associated with the user.
 }

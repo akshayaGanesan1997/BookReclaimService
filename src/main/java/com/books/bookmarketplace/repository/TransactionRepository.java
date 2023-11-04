@@ -1,16 +1,16 @@
 /**
  * TransactionRepository.java:
- * 
+ * <p>
  * This Java file defines the "TransactionRepository" interface, which serves as a repository for accessing
  * transactions-related data in the database. It extends the JpaRepository interface to provide basic CRUD
  * operations for the "Transaction" entity. Additionally, it includes custom query methods for retrieving books
  * that a user has either sold or purchased.
- *
+ * <p>
  * Key Features:
  * - Annotated with @Repository to mark it as a Spring repository component.
  * - Extends JpaRepository to inherit basic database operations for the Transaction entity.
  * - Provides custom queries to find books sold and purchased by a specific user based on transaction type.
- *
+ * <p>
  * The repository plays a vital role in interacting with the database to access and manage transaction-related
  * information within the book marketplace application.
  */

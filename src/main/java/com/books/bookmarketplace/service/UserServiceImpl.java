@@ -1,7 +1,9 @@
 /**
  * UserServiceImpl.java
  * <p>
- * This Java class serves as a service for managing users and user-related operations within the marketplace application. Users play a pivotal role in the system, and this class provides a range of functionalities for handling user-related tasks such as user retrieval, addition, update, and deletion of user profiles. It also facilitates the retrieval of user purchase and sales history and the addition of funds to user accounts.
+ * This Java class serves as a service for managing users and user-related operations within the marketplace application.
+ * Users play a pivotal role in the system, and this class provides a range of functionalities for handling user-related tasks such as user retrieval,
+ * addition, update, and deletion of user profiles. It also facilitates the retrieval of user purchase and sales history and the addition of funds to user accounts.
  * <p>
  * The class is organized into the following key sections:
  * - Dependencies: Declarations and initialization of repository dependencies.
@@ -10,7 +12,8 @@
  * - Adding Funds to User Accounts: Functionality to increase a user's account balance.
  * - Private Helper Methods: Conversion methods to transform entities to model representations.
  * <p>
- * This class's purpose is to ensure efficient management of users, their transactions, and account balances, contributing to a seamless user experience and maintaining data consistency in the marketplace application.
+ * This class's purpose is to ensure efficient management of users, their transactions, and account balances,
+ * contributing to a seamless user experience and maintaining data consistency in the marketplace application.
  */
 
 package com.books.bookmarketplace.service;
@@ -40,9 +43,16 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl implements UserService {
 
+    // Define the UserRepository and TransactionRepository as dependencies for the UserServiceImpl class.
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
 
+    /**
+     * Constructor for UserServiceImpl that injects the UserRepository and TransactionRepository dependencies.
+     *
+     * @param userRepository        The UserRepository used for user-related data access.
+     * @param transactionRepository The TransactionRepository used for transaction-related data access.
+     */
     @Autowired
     public UserServiceImpl(UserRepository userRepository, TransactionRepository transactionRepository) {
         this.userRepository = userRepository;
@@ -57,9 +67,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserDetails> getAllUsers() {
         List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(this::convertToUserDetails)
-                .collect(Collectors.toList());
+        return users.stream().map(this::convertToUserDetails).collect(Collectors.toList());
     }
 
     /**
@@ -71,8 +79,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserDetails getUserById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given ID: " + userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given ID: " + userId));
         return convertToUserDetails(user);
     }
 
@@ -85,8 +92,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public UserDetails searchUsersByEMailOrUserName(String keyword) {
-        User user = userRepository.findUserByKeyword(keyword)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given email or username: " + keyword));
+        User user = userRepository.findUserByKeyword(keyword).orElseThrow(() -> new UserNotFoundException("User not found for the given email or username: " + keyword));
         return convertToUserDetails(user);
     }
 
@@ -112,7 +118,8 @@ public class UserServiceImpl implements UserService {
      * @param user The updated user information.
      * @param id   The ID of the user to update.
      * @return The updated user.
-     * @throws UserNotFoundException if the user does not exist.
+     * @throws UserNotFoundException      if the user does not exist.
+     * @throws UserAlreadyExistsException if the user already exists with the same username or email id
      */
     @Override
     public User updateUser(User user, Long id) {
@@ -151,8 +158,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
+        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
         userRepository.delete(user);
     }
 
@@ -165,8 +171,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public List<BookDetails> getPurchasedBooksByUser(Long id) {
-        userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
+        userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
         List<Book> books = transactionRepository.findPurchasedBooksByUser(id);
         List<BookDetails> purchaseBooks = new ArrayList<>();
         for (Book book : books) {
@@ -185,8 +190,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public List<BookDetails> getBooksSoldByUser(Long id) {
-        userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
+        userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
 
         List<Book> books = transactionRepository.findBooksSoldByUser(id);
         List<BookDetails> soldBooks = new ArrayList<>();
@@ -208,8 +212,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public User addFundsToUser(Long userId, Double amount) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
         user.setFunds(user.getFunds() + amount);
         return userRepository.save(user);
     }
@@ -230,9 +233,7 @@ public class UserServiceImpl implements UserService {
         userDetails.setPhoneNumber(user.getPhoneNumber());
         userDetails.setFunds(user.getFunds());
 
-        List<TransactionDetails> transactionDetails = user.getTransactions().stream()
-                .map(this::convertToTransactionDetails)
-                .collect(Collectors.toList());
+        List<TransactionDetails> transactionDetails = user.getTransactions().stream().map(this::convertToTransactionDetails).collect(Collectors.toList());
         userDetails.setTransactionDetails(transactionDetails);
 
         return userDetails;
@@ -256,6 +257,12 @@ public class UserServiceImpl implements UserService {
         return transactionDetails;
     }
 
+    /**
+     * Converts a Book object to a corresponding BookDetails object.
+     *
+     * @param book The Book object to be converted.
+     * @return A BookDetails object representing the converted book information.
+     */
     public BookDetails convertBookToBookDetails(Book book) {
         BookDetails bookDetails = new BookDetails();
         bookDetails.setBookId(book.getBookId());

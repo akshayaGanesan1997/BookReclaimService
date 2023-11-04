@@ -1,16 +1,16 @@
 /**
  * Transaction.java:
- * 
+ * <p>
  * Defines the "Transaction" entity class for a book marketplace application.
  * It represents a transaction made within the marketplace and includes details such as the transaction ID,
  * associated user and book, transaction date, amount, status, notes, and type (BUY or SELL).
- *
+ * <p>
  * Key Features:
  * - Annotated with @Entity to indicate it's a persistent entity in a database.
  * - Utilizes Lombok annotations for generating common methods like getters, setters, and constructors.
  * - Defines two enums for transaction types and statuses (TransactionType and TransactionStatus).
  * - Specifies validation constraints using Jakarta Bean Validation annotations.
- *
+ * <p>
  * The class serves as a blueprint for storing and managing transaction data in the application's database.
  */
 
@@ -42,36 +42,36 @@ import java.util.Date;
 public class Transaction {
     @Id // Indicates that the following field is the primary key for the table.
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Specifies the strategy for generating primary key values.
-    private Long transactionId; // Unique identifier for each transaction.
+    private Long transactionId;
 
     @ManyToOne // Indicates a many-to-one relationship with the User entity.
     @JoinColumn(name = "user_id") // Specifies the name of the foreign key column in the Transactions table.
     @JsonIgnore // Ignores this field during JSON serialization and deserialization.
-    private User user; // Represents the user associated with the transaction.
+    private User user;
 
     @ManyToOne // Indicates a many-to-one relationship with the Book entity.
     @JoinColumn(name = "book_id") // Specifies the name of the foreign key column in the Transactions table.
     @JsonIgnore // Ignores this field during JSON serialization and deserialization.
-    private Book book; // Represents the book associated with the transaction.
+    private Book book;
 
     @NotNull(message = "Transaction date is required")
     @PastOrPresent(message = "Transaction date must be in the past or present")
-    private Date transactionDate; // Date when the transaction occurred.
+    private Date transactionDate;
 
     @NotNull(message = "Transaction amount is required")
     @Positive(message = "Transaction amount must be a positive number")
-    private Double transactionAmount; // The amount of money involved in the transaction.
+    private Double transactionAmount;
 
     @NotNull
     @Enumerated(EnumType.STRING) // Specifies that the TransactionStatus is stored as a string in the database.
-    private TransactionStatus status; // Represents the status of the transaction.
+    private TransactionStatus status;
 
     @Size(max = 255, message = "Transaction notes must not exceed 255 characters")
-    private String transactionNotes; // Optional notes or comments related to the transaction.
+    private String transactionNotes;
 
     @Enumerated(EnumType.STRING) // Specifies that the TransactionType is stored as a string in the database.
     @NotNull
-    private TransactionType transactionType; // Represents the type of transaction, either BUY or SELL.
+    private TransactionType transactionType;
 
     // Enum for defining the possible transaction types (BUY and SELL).
     public enum TransactionType {

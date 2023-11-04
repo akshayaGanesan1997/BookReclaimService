@@ -19,7 +19,6 @@
  * This class uses validation annotations to ensure the correctness of incoming data and
  * includes error handling for various exceptional cases. It logs events and errors using a Logger.
  */
-
 package com.books.bookmarketplace.controller;
 
 import com.books.bookmarketplace.entity.User;
@@ -63,7 +62,11 @@ public class UserController {
         this.userService = userService;
     }
 
-    // GET Request to retrieve all users
+    /**
+     * GET Request to retrieve all users.
+     *
+     * @return A list of UserDetails representing all users.
+     */
     @GetMapping("/")
     public ResponseEntity<List<UserDetails>> getAllUsers() {
         try {
@@ -77,7 +80,12 @@ public class UserController {
         }
     }
 
-    // GET Request to retrieve a user by user ID
+    /**
+     * GET Request to retrieve a user by user ID.
+     *
+     * @param userId The ID of the user to retrieve.
+     * @return A UserDetails object representing the user.
+     */
     @GetMapping("/getUserById")
     public ResponseEntity<?> getUserById(@Valid @RequestParam(name = "userId") @Positive Long userId) {
         if (userId == null || userId <= 0) {
@@ -96,7 +104,12 @@ public class UserController {
         }
     }
 
-    // GET Request to search for a user by username or email
+    /**
+     * GET Request to search for a user by username or email.
+     *
+     * @param keyword The username or email to search for.
+     * @return A UserDetails object representing the user found.
+     */
     @GetMapping("/searchUsers")
     public ResponseEntity<UserDetails> searchUsers(@Valid @RequestParam(name = "keyword") String keyword) {
         if (keyword.isBlank()) {
@@ -114,7 +127,13 @@ public class UserController {
         }
     }
 
-    // POST Request to add a new user
+    /**
+     * POST Request to add a new user.
+     *
+     * @param user          The User object representing the new user to be added.
+     * @param bindingResult A BindingResult object for validation errors.
+     * @return A ResponseEntity containing the newly added User object.
+     */
     @PostMapping("/addUser")
     public ResponseEntity<User> addUser(@Valid @RequestBody User user, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -136,7 +155,14 @@ public class UserController {
         }
     }
 
-    // PUT Request to update a user
+    /**
+     * PUT Request to update a user.
+     *
+     * @param userId        The ID of the user to be updated.
+     * @param user          The User object with updated information.
+     * @param bindingResult A BindingResult object for validation errors.
+     * @return A ResponseEntity containing the updated User object.
+     */
     @PutMapping("/updateUser")
     public ResponseEntity<User> updateUser(@RequestParam(name = "userId") @Positive Long userId, @Valid @RequestBody User user, BindingResult bindingResult) {
         if (userId == null || userId <= 0) {
@@ -153,14 +179,19 @@ public class UserController {
             User updatedUser = userService.updateUser(user, userId);
             logger.log(Level.INFO, "Updated the user: " + updatedUser.getUsername());
             return ResponseEntity.ok().body(updatedUser);
-        } catch (UserNotFoundException | ValidationException e) {
+        } catch (UserNotFoundException | UserAlreadyExistsException | ValidationException e) {
             throw e;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // DELETE Request to delete a user by user ID
+    /**
+     * DELETE Request to delete a user by user ID.
+     *
+     * @param userId The ID of the user to be deleted.
+     * @return A ResponseEntity with a message indicating the deletion status.
+     */
     @DeleteMapping("/deleteUser")
     public ResponseEntity<String> deleteUser(@Valid @RequestParam(name = "userId") Long userId) {
         if (userId == null || userId <= 0) {
@@ -178,7 +209,12 @@ public class UserController {
         }
     }
 
-    // GET Request to retrieve books purchased by a user
+    /**
+     * GET Request to retrieve books purchased by a user.
+     *
+     * @param userId The ID of the user for whom purchased books should be retrieved.
+     * @return A list of BookDetails representing the books purchased by the user.
+     */
     @GetMapping("/purchasedBooks")
     public ResponseEntity<List<BookDetails>> purchasedBooks(@Valid @RequestParam(name = "userId") Long userId) {
         try {
@@ -201,7 +237,12 @@ public class UserController {
         }
     }
 
-    // GET Request to retrieve books sold by a user
+    /**
+     * GET Request to retrieve books sold by a user.
+     *
+     * @param userId The ID of the user for whom sold books should be retrieved.
+     * @return A list of BookDetails representing the books sold by the user.
+     */
     @GetMapping("/booksSoldByUser")
     public ResponseEntity<List<BookDetails>> booksSoldByUser(@Valid @RequestParam(name = "userId") Long userId) {
         try {
@@ -224,7 +265,13 @@ public class UserController {
         }
     }
 
-    // PUT Request to add funds to a user's account
+    /**
+     * PUT Request to add funds to a user's account.
+     *
+     * @param userId The ID of the user for whom funds should be added.
+     * @param funds  The amount of funds to add to the user's account.
+     * @return A ResponseEntity containing the updated User object with added funds.
+     */
     @PutMapping("/addFunds")
     public ResponseEntity<User> addFundsToUser(@Valid @RequestParam(name = "userId") Long userId, @RequestParam(name = "funds") Double funds) {
         if (userId == null || userId <= 0) {

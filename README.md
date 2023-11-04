@@ -92,6 +92,7 @@ The application is organized as follows:
 - `com.books.bookmarketplace.entity`: Defines JPA entity classes for users, books, and transactions.
 - `com.books.bookmarketplace.model`: Defines model classes for simplified data representation.
 - `com.books.bookmarketplace.repository`: Provides repository interfaces for database operations.
+- `com.books.bookmarketplace.service`: Contains service classes for handling the logic behind the API calls.
 - `com.books.bookmarketplace.errorhandler`: Contains custom exception classes and global exception handling.
 - `resources`: Configuration files, including application properties and database setup.
 
@@ -108,7 +109,7 @@ The application includes custom exception classes with specific purposes:
 
 ## Exception Handling
 
-The `GlobalExceptionHandler` class handles exceptions and provides meaningful error responses. It maps different exceptions to appropriate HTTP status codes and custom error messages.
+The `GlobalExceptionHandler` class handles all custom exceptions and other exceptions to provides meaningful error responses. It maps different exceptions to appropriate HTTP status codes and custom error messages.
 
 ## API Documentation
 

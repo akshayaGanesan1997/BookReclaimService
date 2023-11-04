@@ -1,7 +1,10 @@
 /**
  * UserService.java
- * This interface defines a set of operations that can be performed on users within the marketplace application. Users are an integral part of the system, and this interface specifies methods for managing user-related tasks such as retrieval, addition, update, and deletion of user profiles. It also provides functionality to retrieve user purchase and sales history and to add funds to user accounts.
- *
+ * This interface defines a set of operations that can be performed on users within the marketplace application.
+ * Users are an integral part of the system, and this interface specifies methods for managing user-related
+ * tasks such as retrieval, addition, update, and deletion of user profiles.
+ * It also provides functionality to retrieve user purchase and sales history and to add funds to user accounts.
+ * <p>
  * The interface encompasses the following key areas:
  * - Retrieving user details, both in bulk and by individual ID.
  * - Searching for users by email or username.
@@ -10,13 +13,13 @@
  * - Deleting users from the system.
  * - Retrieving lists of books purchased and sold by a user.
  * - Adding funds to a user's account.
- *
- * Implementations of this interface are expected to provide the necessary functionality for managing user-related operations in the marketplace, contributing to a seamless user experience and data consistency.
+ * <p>
+ * Implementations of this interface are expected to provide the necessary functionality for managing user-related operations in the marketplace,
+ * contributing to a seamless user experience and data consistency.
  */
 
 package com.books.bookmarketplace.service;
 
-import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.model.BookDetails;
 import com.books.bookmarketplace.model.UserDetails;
@@ -27,7 +30,7 @@ import java.util.List;
  * This interface defines the operations that can be performed on users within the marketplace.
  */
 public interface UserService {
-    
+
     /**
      * Retrieves a list of all users in the marketplace.
      *
