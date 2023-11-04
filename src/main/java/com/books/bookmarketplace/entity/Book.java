@@ -1,10 +1,10 @@
 /**
  * Book.java:
- * 
+ * <p>
  * Defines the "Book" entity class for a book marketplace application.
  * It represents books available in the marketplace, storing information such as book ID, ISBN, title, author,
  * edition, publication year, language, publisher, prices, description, category, condition, and status.
- *
+ * <p>
  * Key Features:
  * - Annotated with @Entity to indicate it's a persistent entity to be mapped to a database table.
  * - Utilizes Lombok annotations to generate common methods like getters, setters, constructors, and builders.
@@ -12,7 +12,7 @@
  * - Establishes one-to-many relationships with the "Transaction" entity to track book transactions.
  * - Enumerates possible book categories, conditions, and statuses for standardized classification.
  * - Provides a method, depreciatePrice, for reducing the book's current price by 10%.
- *
+ * <p>
  * The class serves as a blueprint for storing and managing book data in the application's database,
  * facilitating the exchange and tracking of books in the marketplace.
  */
@@ -92,7 +92,7 @@ public class Book {
     private Status status; // The status of the book.
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL) // Defines a one-to-many relationship with transactions.
-    private List < Transaction > transactions = new ArrayList < > (); // List of transactions associated with the book.
+    private List<Transaction> transactions = new ArrayList<>(); // List of transactions associated with the book.
 
     public enum Category {
         // Enumerated values for book categories.

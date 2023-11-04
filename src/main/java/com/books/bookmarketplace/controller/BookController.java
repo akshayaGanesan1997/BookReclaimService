@@ -7,12 +7,14 @@
  * the BookService to execute these operations.
  * <p>
  * Endpoints:
- * - GET /books/                 : Retrieve all books or books matching specific criteria.
+ * - GET /books/                  : Retrieve all books or books matching specific criteria.
  * - GET /books/getBookByISBN?isbn={isbn} : Retrieve a book by its ISBN.
- * - POST /books/searchBooks?keyword={searchTerm} : Search for books based on a keyword.
+ * - GET /books/getBookById?bookId={bookId} : Retrieve a book by its ID.
+ * - GET /books/getBooksByCategory?category={category} : Retrieve books by category.
+ * - GET /books/searchBooks?keyword={searchTerm} : Search for books based on a keyword.
  * - POST /books/addBook          : Add a new book to the marketplace.
- * - PUT /books/updateBook?bookId={id}    : Update an existing book.
- * - DELETE /books/deleteBook?bookId={id} : Delete a book by its ID.
+ * - PUT /books/updateBook?bookId={bookId}    : Update an existing book.
+ * - DELETE /books/deleteBook?bookId={bookId} : Delete a book by its ID.
  * - POST /books/buyBook          : Purchase a book by a user.
  * - POST /books/sellBook         : Sell a book by a user.
  * - POST /books/sellBookByISBN   : Sell a book by ISBN.
@@ -20,7 +22,6 @@
  * This class integrates validation using annotations to ensure the integrity of incoming data. It also
  * includes comprehensive error handling for various exceptional situations and logs events and errors using a Logger.
  */
-
 package com.books.bookmarketplace.controller;
 
 import com.books.bookmarketplace.entity.Book;
@@ -62,7 +63,11 @@ public class BookController {
         this.bookService = bookService;
     }
 
-    // GET Request to retrieve all books
+    /**
+     * Retrieve all books.
+     *
+     * @return A list of all available books.
+     */
     @GetMapping("/")
     public ResponseEntity<List<Book>> getAllBooks() {
         try {
@@ -80,7 +85,11 @@ public class BookController {
         }
     }
 
-    // GET Request to retrieve available books
+    /**
+     * Retrieve available books.
+     *
+     * @return A list of available books.
+     */
     @GetMapping("/getAvailableBooks")
     public ResponseEntity<List<Book>> getAvailableBooks() {
         try {
@@ -102,7 +111,12 @@ public class BookController {
         }
     }
 
-    // GET Request to retrieve a book by its ID
+    /**
+     * Retrieve a book by its ID.
+     *
+     * @param bookId The unique identifier of the book.
+     * @return The book matching the provided ID.
+     */
     @GetMapping("/getBookById")
     public ResponseEntity<Book> getBookById(@Valid @RequestParam(name = "bookId") @Positive Long bookId) {
         if (bookId == null || bookId <= 0) {
@@ -125,7 +139,12 @@ public class BookController {
         }
     }
 
-    // GET Request to retrieve books by category
+    /**
+     * Retrieve books by category.
+     *
+     * @param category The category of books to retrieve.
+     * @return A list of books in the specified category.
+     */
     @GetMapping("/getBooksByCategory")
     public ResponseEntity<List<Book>> getBooksByCategory(@RequestParam(name = "category") String category) {
         if (category.isBlank()) {
@@ -161,7 +180,12 @@ public class BookController {
         }
     }
 
-    // GET Request to retrieve a book by ISBN
+    /**
+     * Retrieve a book by ISBN.
+     *
+     * @param isbn The ISBN of the book.
+     * @return The book matching the provided ISBN.
+     */
     @GetMapping("/getBookByISBN")
     public ResponseEntity<Book> getBookByISBN(@RequestParam(name = "isbn") String isbn) {
         if (isbn.isBlank()) {
@@ -185,7 +209,16 @@ public class BookController {
 
     }
 
-    // Get Request to search for books by a keyword
+    /**
+     * Search for books based on a keyword and optional filters.
+     *
+     * @param keyword   The keyword to search for in book titles and descriptions.
+     * @param sortBy    (Optional) The field to sort the results by (e.g., "title" or "author").
+     * @param sortOrder (Optional) The sorting order ("asc" for ascending, "desc" for descending).
+     * @param minPrice  (Optional) The minimum price filter.
+     * @param maxPrice  (Optional) The maximum price filter.
+     * @return A list of books matching the search criteria.
+     */
     @GetMapping("/searchBooks")
     public ResponseEntity<List<Book>> searchBooks(
             @RequestParam(name = "keyword") String keyword,
@@ -214,7 +247,13 @@ public class BookController {
         }
     }
 
-    // POST Request to add a new book
+    /**
+     * Add a new book to the marketplace.
+     *
+     * @param book          The book to be added.
+     * @param bindingResult The result of validation.
+     * @return The newly added book.
+     */
     @PostMapping("/addBook")
     public ResponseEntity<Book> addBook(@Valid @RequestBody Book book, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -239,7 +278,14 @@ public class BookController {
         }
     }
 
-    // PUT Request to update a book
+    /**
+     * Update an existing book by its ID.
+     *
+     * @param bookId        The unique identifier of the book to update.
+     * @param book          The updated book details.
+     * @param bindingResult The result of validation.
+     * @return The updated book.
+     */
     @PutMapping("/updateBook")
     public ResponseEntity<Book> updateBook(@RequestParam(name = "bookId") @Positive Long bookId, @Valid @RequestBody Book book, BindingResult bindingResult) {
         if (bookId == null || bookId <= 0) {
@@ -268,7 +314,12 @@ public class BookController {
         }
     }
 
-    // DELETE Request to delete a book by ID
+    /**
+     * Delete a book by its ID.
+     *
+     * @param bookId The unique identifier of the book to delete.
+     * @return A message indicating the success of the deletion.
+     */
     @DeleteMapping("/deleteBook")
     public ResponseEntity<String> deleteBook(@RequestParam(name = "bookId") Long bookId) {
         if (bookId == null || bookId <= 0) {
@@ -290,9 +341,18 @@ public class BookController {
         }
     }
 
-    // POST Request to allow a user to buy a book by book ID
+    /**
+     * Purchase a book by user and book ID.
+     *
+     * @param userId The unique identifier of the user purchasing the book.
+     * @param bookId The unique identifier of the book to purchase.
+     * @return A message indicating the success of the purchase.
+     */
     @PostMapping("/buyBook")
     public ResponseEntity<String> buyBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
+        if (bookId == null || bookId <= 0 || userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid book ID or user ID. Please provide a positive numeric value."));
+        }
         try {
             logger.log(Level.INFO, "User with ID " + userId + " is attempting to buy book with ID " + bookId);
             bookService.buyBook(userId, bookId);
@@ -307,9 +367,18 @@ public class BookController {
         }
     }
 
-    // POST Request to allow a user to sell a book by book ID
+    /**
+     * Sell a book by user and book ID.
+     *
+     * @param userId The unique identifier of the user selling the book.
+     * @param bookId The unique identifier of the book to sell.
+     * @return A message indicating the success of the sale.
+     */
     @PostMapping("/sellBook")
     public ResponseEntity<String> sellBookById(@RequestParam(name = "userId") Long userId, @RequestParam(name = "bookId") Long bookId) {
+        if (bookId == null || bookId <= 0 || userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid book ID or user ID. Please provide a positive numeric value."));
+        }
         try {
             logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ID " + bookId);
             bookService.sellBook(userId, bookId);
@@ -325,12 +394,24 @@ public class BookController {
     }
 
 
-    // POST Request to allow a user to sell a book by ISBN
+    /**
+     * Sell a book by ISBN (International Standard Book Number).
+     *
+     * @param userId The unique identifier of the user selling the book.
+     * @param isbn   The ISBN of the book to sell.
+     * @param book   The book details if the book is new to our service
+     */
     @PostMapping("/sellBookByISBN")
     public ResponseEntity<String> sellBookByISBN(
             @RequestParam(name = "userId", required = true) Long userId,
             @RequestParam(name = "isbn", required = true) String isbn,
             @RequestBody @Nullable Book book) {
+        if (userId == null || userId <= 0) {
+            throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
+        }
+        if (isbn.isBlank()) {
+            throw new ValidationException(Collections.singletonList("ISBN is required. Cannot be blank"));
+        }
         try {
             logger.log(Level.INFO, "User with ID " + userId + " is attempting to sell book with ISBN " + isbn);
             bookService.sellBookByISBN(userId, isbn, book);

@@ -42,7 +42,7 @@ public class BookServiceImpl implements BookService {
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final UserService userService;
-    private final int MAX_INVENTORY_SIZE = 100;
+    private final int MAX_INVENTORY_SIZE = 100; //Defining the fixed pool size of books
 
     @Autowired
     public BookServiceImpl(BookRepository bookRepository, UserRepository userRepository, TransactionRepository transactionRepository, UserService userService) {
@@ -112,8 +112,12 @@ public class BookServiceImpl implements BookService {
     /**
      * Searches for books based on a keyword.
      *
-     * @param keyword The keyword to search for in book titles, descriptions, etc.
-     * @return List of books matching the search keyword.
+     * @param keyword   The keyword to search for in book titles, author or category
+     * @param minPrice  The minimum price for filtering (can be null).
+     * @param maxPrice  The maximum price for filtering (can be null).
+     * @param sortBy    The field to sort the results by ("title", "author", "category").
+     * @param sortOrder The sorting order ("asc" or "desc").
+     * @return List of books matching the search criteria.
      */
     @Override
     public List<Book> searchBooks(String keyword, Double minPrice, Double maxPrice, String sortBy, String sortOrder) {
@@ -188,7 +192,8 @@ public class BookServiceImpl implements BookService {
      * @param book The updated book information.
      * @param id   The ID of the book to update.
      * @return The updated book.
-     * @throws BookNotFoundException if the book does not exist.
+     * @throws BookNotFoundException      if the book does not exist.
+     * @throws BookAlreadyExistsException if the book already exists in the inventory
      */
     @Override
     public Book updateBook(Book book, Long id) {
@@ -222,6 +227,13 @@ public class BookServiceImpl implements BookService {
     }
 
 
+    /**
+     * Deletes a book from the marketplace. If the book has a quantity greater than 1, the quantity is decremented by 1.
+     * If the book has a quantity of 1, it is removed from the marketplace.
+     *
+     * @param id The ID of the book to delete.
+     * @throws BookNotFoundException if the book does not exist.
+     */
     @Override
     public void deleteBook(Long id) {
         Book book = bookRepository.findById(id)
@@ -238,11 +250,10 @@ public class BookServiceImpl implements BookService {
     }
 
     /**
-     * Buys a book for a user.
+     * Buys a book for a user, updating the user's funds, depreciates book price by 10% and book's availability.
      *
      * @param userId The ID of the user buying the book.
      * @param bookId The ID of the book to buy.
-     * @return "Success" if the purchase is successful.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
      * @throws ValidationException   if there are issues with the purchase.
@@ -284,11 +295,10 @@ public class BookServiceImpl implements BookService {
     }
 
     /**
-     * Sells a book for a user.
+     * Sells back a book that the user owns, updating the user's funds, depreciates book price by 10% and book's availability.
      *
      * @param userId The ID of the user selling the book.
      * @param bookId The ID of the book to sell.
-     * @return "Success" if the sale is successful.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
      * @throws ValidationException   if there are issues with the sale.
@@ -318,16 +328,16 @@ public class BookServiceImpl implements BookService {
     }
 
     /**
-     * Sells a book by ISBN for a user.
+     * Sells a book by ISBN for a user if the isbn already exists in the inventory
+     * Or else adding a new book if the ISBN does not exist for sale.
      *
-     * @param userId The ID of the user selling the book.
-     * @param isbn   The ISBN of the book to sell.
-     * @return "Success" if the sale is successful.
+     * @param userId          The ID of the user selling the book.
+     * @param isbn            The ISBN of the book to sell.
+     * @param sellBookDetails Details of the book being sold, if it's a new book.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
      * @throws ValidationException   if there are issues with the sale.
      */
-
     @Override
     public void sellBookByISBN(Long userId, String isbn, Book sellBookDetails) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
@@ -341,7 +351,7 @@ public class BookServiceImpl implements BookService {
             double sellingPrice = existingBook.getCurrentPrice();
             user.setFunds(user.getFunds() + sellingPrice);
             existingBook.setQuantity(existingBook.getQuantity() + 1);
-            existingBook.depreciatePrice();
+            existingBook.depreciatePrice(); //depreciates book price by 10%
             existingBook.setStatus(Book.Status.AVAILABLE);
 
             Transaction transaction = createTransaction(user, existingBook, sellingPrice, Transaction.TransactionType.SELL);
@@ -364,6 +374,13 @@ public class BookServiceImpl implements BookService {
         }
     }
 
+    /**
+     * Creates a new Book object using the provided ISBN and book details, initializing its attributes.
+     *
+     * @param isbn            The International Standard Book Number (ISBN) of the book.
+     * @param sellBookDetails Details of the book being sold, including title, author, and other attributes.
+     * @return A new Book object with attributes initialized from the provided details.
+     */
     private static Book getBook(String isbn, Book sellBookDetails) {
         Book newBook = new Book();
         newBook.setISBN(isbn);
@@ -406,6 +423,12 @@ public class BookServiceImpl implements BookService {
         return transaction;
     }
 
+    /**
+     * Converts a Book entity to a BookDetails model for user display.
+     *
+     * @param book The Book entity to convert.
+     * @return The BookDetails model containing book information.
+     */
     public BookDetails convertBookToBookDetails(Book book) {
         BookDetails bookDetails = new BookDetails();
         bookDetails.setBookId(book.getBookId());

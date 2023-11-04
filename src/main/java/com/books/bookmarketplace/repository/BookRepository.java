@@ -1,15 +1,15 @@
 /**
  * BookRepository.java:
- * 
+ * <p>
  * Defines the "BookRepository" interface, which serves as a repository for accessing book-related data
  * in the database. It extends the JpaRepository interface to provide basic CRUD operations for the "Book" entity.
  * Additionally, it includes custom query methods for retrieving books by category, ISBN, keyword, and status.
- *
+ * <p>
  * Key Features:
  * - Annotated with @Repository to mark it as a Spring repository component.
  * - Extends JpaRepository to inherit basic database operations for the Book entity.
  * - Provides custom queries to search for and retrieve books based on various criteria.
- *
+ * <p>
  * The repository plays a crucial role in interacting with the database to access and manage book-related information
  * within the book marketplace application.
  */
@@ -62,7 +62,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
      * Custom query to retrieve a list of available books based on their status.
      *
      * @param status The status of the books to retrieve (e.g., AVAILABLE, PENDING).
-     * @return A list of books with the specified status.
+     * @return A list of books with the available status.
      */
     @Query("SELECT b FROM Book b WHERE b.status = :status")
     List<Book> findAvailableBooks(@Param("status") Book.Status status);
