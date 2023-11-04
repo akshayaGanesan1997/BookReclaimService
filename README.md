@@ -28,7 +28,7 @@ The application uses MySQL as its database system. To set up the database, follo
 
 2. **Database Configuration**: Open `application.properties` in the `resources` directory and configure your MySQL database connection properties, such as `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password`.
 
-3. **Schema Creation**: The application automatically creates the necessary schema and tables on startup, thanks to Spring Data JPA. You can also manually create the schema using SQL scripts in the `resources` directory if needed.
+3. **Schema Creation**: The application automatically creates the necessary schema and tables on startup, thanks to Spring Data JPA. You can also manually create the schema using SQL scripts (script.sql) in the `resources` directory if needed.
 
 4. **Database Initialization**: You can initialize the database with sample data or specific setup scripts, if required.
 
