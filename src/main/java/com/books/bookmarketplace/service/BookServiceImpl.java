@@ -1,14 +1,14 @@
 /**
  * BookServiceImpl.java:
- * 
+ * <p>
  * Defines a service for managing books and book-related operations in a marketplace application. It includes methods for retrieving, adding, updating, buying, and selling books. It also handles various exceptions related to book operations and maintains the integrity of the marketplace inventory. This class serves as the implementation of the BookService interface.
- *
+ * <p>
  * The class structure includes the following sections:
  * - Dependencies: Declarations and initialization of repositories and constants.
  * - Methods for Managing Books: Retrieval, addition, and update of books.
  * - Methods for Buying and Selling Books: Purchase and sale of books, including by ISBN.
  * - Helper Methods: Private methods for creating transaction records.
- *
+ * <p>
  * This class is designed to ensure the smooth operation of a book marketplace by providing essential book-related services and maintaining data consistency.
  */
 
@@ -18,6 +18,7 @@ import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.Transaction;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.*;
+import com.books.bookmarketplace.model.BookDetails;
 import com.books.bookmarketplace.repository.BookRepository;
 import com.books.bookmarketplace.repository.TransactionRepository;
 import com.books.bookmarketplace.repository.UserRepository;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing books and book-related operations.
@@ -39,13 +41,15 @@ public class BookServiceImpl implements BookService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final UserService userService;
     private final int MAX_INVENTORY_SIZE = 100;
 
     @Autowired
-    public BookServiceImpl(BookRepository bookRepository, UserRepository userRepository, TransactionRepository transactionRepository) {
+    public BookServiceImpl(BookRepository bookRepository, UserRepository userRepository, TransactionRepository transactionRepository, UserService userService) {
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+        this.userService = userService;
     }
 
     /**
@@ -112,8 +116,35 @@ public class BookServiceImpl implements BookService {
      * @return List of books matching the search keyword.
      */
     @Override
-    public List<Book> searchBooks(String keyword) {
-        return bookRepository.findBooksByKeyword(keyword);
+    public List<Book> searchBooks(String keyword, Double minPrice, Double maxPrice, String sortBy, String sortOrder) {
+        List<Book> books = bookRepository.findBooksByKeyword(keyword);
+
+        if (minPrice != null || maxPrice != null) {
+            books = books.stream()
+                    .filter(book -> (minPrice == null || book.getCurrentPrice() >= minPrice) &&
+                            (maxPrice == null || book.getCurrentPrice() <= maxPrice))
+                    .collect(Collectors.toList());
+        }
+
+        Comparator<Book> bookComparator;
+
+        if (sortBy.equalsIgnoreCase("title")) {
+            bookComparator = Comparator.comparing(Book::getTitle);
+        } else if (sortBy.equalsIgnoreCase("author")) {
+            bookComparator = Comparator.comparing(Book::getAuthor);
+        } else if (sortBy.equalsIgnoreCase("category")) {
+            bookComparator = Comparator.comparing(Book::getCategory);
+        } else {
+            bookComparator = Comparator.comparing(Book::getTitle);
+        }
+
+        if (sortOrder.equalsIgnoreCase("desc")) {
+            bookComparator = bookComparator.reversed();
+        }
+
+        books.sort(bookComparator);
+
+        return books;
     }
 
     /**
@@ -121,7 +152,7 @@ public class BookServiceImpl implements BookService {
      *
      * @param newBook The new book to add.
      * @return The added book.
-     * @throws InventoryFullException if the inventory is full.
+     * @throws InventoryFullException     if the inventory is full.
      * @throws BookAlreadyExistsException if a book with the same ISBN already exists.
      */
     @Override
@@ -129,11 +160,24 @@ public class BookServiceImpl implements BookService {
         if (bookRepository.count() > MAX_INVENTORY_SIZE) {
             throw new InventoryFullException("The inventory is full. No more new books can be added.");
         }
+
+        // Check if a book with the same ISBN already exists
         Book existingBook = bookRepository.findBookByISBN(newBook.getISBN());
+
         if (existingBook != null) {
-            throw new BookAlreadyExistsException("A book with the same ISBN already exists.");
+            // Check if the title and author also match
+            if (existingBook.getTitle().equals(newBook.getTitle()) && existingBook.getAuthor().equals(newBook.getAuthor())) {
+                // If the book already exists, increment its quantity and set status to AVAILABLE
+                existingBook.setQuantity(existingBook.getQuantity() + 1);
+                existingBook.setStatus(Book.Status.AVAILABLE);
+                return bookRepository.save(existingBook);
+            } else {
+                throw new BookAlreadyExistsException("A book with the same ISBN but different title and author already exists.");
+            }
         }
 
+        // If no matching book is found, set quantity to 1 and status to AVAILABLE
+        newBook.setQuantity(1);
         newBook.setStatus(Book.Status.AVAILABLE);
         return bookRepository.save(newBook);
     }
@@ -151,7 +195,12 @@ public class BookServiceImpl implements BookService {
         Book existingBook = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException("Book not found for the given ID: " + id));
 
-            // Update book attributes
+        // Check if the updated ISBN is not the same as an existing book's ISBN
+        Book bookWithSameISBN = bookRepository.findBookByISBN(book.getISBN());
+        if (bookWithSameISBN != null && !bookWithSameISBN.getBookId().equals(id)) {
+            throw new BookAlreadyExistsException("An existing book with the same ISBN already exists.");
+        }
+
         existingBook.setISBN(book.getISBN());
         existingBook.setAuthor(book.getAuthor());
         existingBook.setCategory(book.getCategory());
@@ -162,8 +211,6 @@ public class BookServiceImpl implements BookService {
         existingBook.setCurrentPrice(book.getCurrentPrice());
         existingBook.setOriginalPrice(book.getOriginalPrice());
         existingBook.setTitle(book.getTitle());
-
-        // Update related transactions
         List<Transaction> updatedTransactions = new ArrayList<>();
         for (Transaction transaction : book.getTransactions()) {
             transaction.setBook(existingBook);
@@ -174,28 +221,37 @@ public class BookServiceImpl implements BookService {
         return bookRepository.save(existingBook);
     }
 
+
     @Override
     public void deleteBook(Long id) {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() -> new BookNotFoundException("Book not found for the given id: " + id));
-        bookRepository.delete(book);
+
+        if (book.getQuantity() > 1) {
+            // If the book has a quantity greater than 1, decrement the count and keep it AVAILABLE
+            book.setQuantity(book.getQuantity() - 1);
+            bookRepository.save(book);
+        } else {
+            // If the book has a quantity of 1, delete it from the inventory
+            bookRepository.delete(book);
+        }
     }
 
     /**
      * Buys a book for a user.
      *
-     * @param userId  The ID of the user buying the book.
-     * @param bookId  The ID of the book to buy.
+     * @param userId The ID of the user buying the book.
+     * @param bookId The ID of the book to buy.
      * @return "Success" if the purchase is successful.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
-     * @throws ValidationException if there are issues with the purchase.
+     * @throws ValidationException   if there are issues with the purchase.
      */
-    public String buyBook(Long userId, Long bookId) {
+    public void buyBook(Long userId, Long bookId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
         Book book = bookRepository.findById(bookId).orElseThrow(() -> new BookNotFoundException("Book not found for the given id: " + bookId));
 
-        if (book.getStatus() != Book.Status.AVAILABLE) {
+        if (book.getQuantity() < 1 || !book.getStatus().equals(Book.Status.AVAILABLE)) {
             throw new ValidationException(Collections.singletonList("Book is not available for purchase."));
         }
 
@@ -206,41 +262,49 @@ public class BookServiceImpl implements BookService {
         Double buyingPrice = book.getCurrentPrice();
         user.setFunds(user.getFunds() - buyingPrice);
         book.depreciatePrice();
-        book.setStatus(Book.Status.SOLD);
 
-        Transaction transaction = createTransaction(user, book, buyingPrice, Transaction.TransactionType.BUY);
+        if (book.getQuantity() == 1) {
+            // If it's the last copy of the book, set the status to SOLD
+            book.setStatus(Book.Status.SOLD);
+            book.setQuantity(0);
+        } else {
+            // If there are more copies, decrement the quantity by 1
+            book.setQuantity(book.getQuantity() - 1);
+        }
 
-        if (book.getCurrentPrice() <= 0) {
+        if (book.getCurrentPrice() <= 0 || book.getQuantity() <= 0) {
             book.setStatus(Book.Status.DISCONTINUED);
         }
+
+        Transaction transaction = createTransaction(user, book, buyingPrice, Transaction.TransactionType.BUY);
         transactionRepository.save(transaction);
         userRepository.save(user);
         bookRepository.save(book);
 
-        return "Success";
     }
 
     /**
      * Sells a book for a user.
      *
-     * @param userId  The ID of the user selling the book.
-     * @param bookId  The ID of the book to sell.
+     * @param userId The ID of the user selling the book.
+     * @param bookId The ID of the book to sell.
      * @return "Success" if the sale is successful.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
-     * @throws ValidationException if there are issues with the sale.
+     * @throws ValidationException   if there are issues with the sale.
      */
 
-    public String sellBook(Long userId, Long bookId) {
+    public void sellBook(Long userId, Long bookId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
         Book book = bookRepository.findById(bookId).orElseThrow(() -> new BookNotFoundException("Book not found for the given id: " + bookId));
 
-        if (!user.getUserId().equals(userId)) {
+        if (!userService.getPurchasedBooksByUser(userId).contains(convertBookToBookDetails(book))) {
             throw new ValidationException(Collections.singletonList("Seller does not own the book with the given ID."));
         }
 
         double sellingPrice = book.getCurrentPrice();
         user.setFunds(user.getFunds() + sellingPrice);
+        book.setQuantity(book.getQuantity() + 1);
         double depreciationFactor = 0.90; // 10% depreciation
         double currentPrice = book.getCurrentPrice() * depreciationFactor;
         book.setCurrentPrice(currentPrice);
@@ -251,52 +315,82 @@ public class BookServiceImpl implements BookService {
 
         userRepository.save(user);
         bookRepository.save(book);
-
-        return "Success";
     }
-    
+
     /**
      * Sells a book by ISBN for a user.
      *
-     * @param userId  The ID of the user selling the book.
-     * @param isbn    The ISBN of the book to sell.
+     * @param userId The ID of the user selling the book.
+     * @param isbn   The ISBN of the book to sell.
      * @return "Success" if the sale is successful.
      * @throws UserNotFoundException if the user does not exist.
      * @throws BookNotFoundException if the book does not exist.
-     * @throws ValidationException if there are issues with the sale.
+     * @throws ValidationException   if there are issues with the sale.
      */
 
     @Override
-    public String sellBookByISBN(Long userId, String isbn) {
+    public void sellBookByISBN(Long userId, String isbn, Book sellBookDetails) {
         User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + userId));
-        Book book = Optional.ofNullable(bookRepository.findBookByISBN(isbn))
-                .orElseThrow(() -> new BookNotFoundException("Book not found for the given ISBN: " + isbn));
+        Book existingBook = bookRepository.findBookByISBN(isbn);
 
-        if (!book.getStatus().equals(Book.Status.AVAILABLE)) {
-            throw new ValidationException(Collections.singletonList("Book is not available for purchase."));
+        if (existingBook != null) {
+            if (!existingBook.getStatus().equals(Book.Status.AVAILABLE)) {
+                throw new ValidationException(Collections.singletonList("Book is not available for purchase."));
+            }
+
+            double sellingPrice = existingBook.getCurrentPrice();
+            user.setFunds(user.getFunds() + sellingPrice);
+            existingBook.setQuantity(existingBook.getQuantity() + 1);
+            existingBook.depreciatePrice();
+            existingBook.setStatus(Book.Status.AVAILABLE);
+
+            Transaction transaction = createTransaction(user, existingBook, sellingPrice, Transaction.TransactionType.SELL);
+            transactionRepository.save(transaction);
+
+            userRepository.save(user);
+            bookRepository.save(existingBook);
+        } else {
+            // Book with the given ISBN doesn't exist, add a new book
+            if (sellBookDetails != null) {
+                Book newBook = getBook(isbn, sellBookDetails);
+                Transaction transaction = createTransaction(user, newBook, newBook.getOriginalPrice(), Transaction.TransactionType.SELL);
+                transactionRepository.save(transaction);
+
+                userRepository.save(user);
+                bookRepository.save(newBook);
+            } else {
+                throw new ValidationException(Collections.singletonList("New book details are required for a new book."));
+            }
         }
+    }
 
-        double sellingPrice = book.getCurrentPrice();
-        user.setFunds(user.getFunds() + sellingPrice);
-        book.depreciatePrice();
-        book.setStatus(Book.Status.AVAILABLE);
-
-        Transaction transaction = createTransaction(user, book, sellingPrice, Transaction.TransactionType.SELL);
-        transactionRepository.save(transaction);
-
-        userRepository.save(user);
-        bookRepository.save(book);
-
-        return "Success ";
+    private static Book getBook(String isbn, Book sellBookDetails) {
+        Book newBook = new Book();
+        newBook.setISBN(isbn);
+        newBook.setStatus(Book.Status.AVAILABLE);
+        newBook.setQuantity(1);
+        newBook.setCurrentPrice(sellBookDetails.getCurrentPrice()); // Set the current price
+        newBook.setTitle(sellBookDetails.getTitle());
+        newBook.setAuthor(sellBookDetails.getAuthor());
+        newBook.setLanguage(sellBookDetails.getLanguage());
+        newBook.setOriginalPrice(sellBookDetails.getOriginalPrice());
+        newBook.setEdition(sellBookDetails.getEdition());
+        newBook.setPublicationYear(sellBookDetails.getPublicationYear());
+        newBook.setPublisher(sellBookDetails.getPublisher());
+        newBook.setDescription(sellBookDetails.getDescription());
+        newBook.setCategory(sellBookDetails.getCategory());
+        newBook.setConditionDescription(sellBookDetails.getConditionDescription());
+        newBook.setCondition(sellBookDetails.getCondition());
+        return newBook;
     }
 
     /**
      * Creates a transaction record for a book-related action.
      *
-     * @param user            The user involved in the transaction.
-     * @param book            The book involved in the transaction.
+     * @param user              The user involved in the transaction.
+     * @param book              The book involved in the transaction.
      * @param transactionAmount The amount involved in the transaction.
-     * @param transactionType The type of transaction (BUY or SELL).
+     * @param transactionType   The type of transaction (BUY or SELL).
      * @return The created transaction record.
      */
     private Transaction createTransaction(User user, Book book, double transactionAmount, Transaction.TransactionType transactionType) {
@@ -310,5 +404,27 @@ public class BookServiceImpl implements BookService {
         transaction.setTransactionAmount(transactionAmount);
         transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
         return transaction;
+    }
+
+    public BookDetails convertBookToBookDetails(Book book) {
+        BookDetails bookDetails = new BookDetails();
+        bookDetails.setBookId(book.getBookId());
+        bookDetails.setCategory(String.valueOf(book.getCategory()));
+        bookDetails.setDescription(book.getDescription());
+        bookDetails.setEdition(book.getEdition());
+        bookDetails.setAuthor(book.getAuthor());
+        bookDetails.setISBN(book.getISBN());
+        bookDetails.setLanguage(book.getLanguage());
+        bookDetails.setStatus(String.valueOf(book.getStatus()));
+        bookDetails.setCurrentPrice(book.getCurrentPrice());
+        bookDetails.setQuantity(book.getQuantity());
+        bookDetails.setPublisher(book.getPublisher());
+        bookDetails.setOriginalPrice(book.getOriginalPrice());
+        bookDetails.setTitle(book.getTitle());
+        bookDetails.setAuthor(book.getAuthor());
+        bookDetails.setPublicationYear(book.getPublicationYear());
+        bookDetails.setCondition(String.valueOf(book.getCondition()));
+
+        return bookDetails;
     }
 }

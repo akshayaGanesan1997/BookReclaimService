@@ -18,6 +18,7 @@ package com.books.bookmarketplace.service;
 
 import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
+import com.books.bookmarketplace.model.BookDetails;
 import com.books.bookmarketplace.model.UserDetails;
 
 import java.util.List;
@@ -80,7 +81,7 @@ public interface UserService {
      * @param id The ID of the user to retrieve purchased books for.
      * @return List of books purchased by the user.
      */
-    List<Book> getPurchasedBooksByUser(Long id);
+    List<BookDetails> getPurchasedBooksByUser(Long id);
 
     /**
      * Retrieves a list of books sold by a user.
@@ -88,7 +89,7 @@ public interface UserService {
      * @param id The ID of the user to retrieve books sold by.
      * @return List of books sold by the user.
      */
-    List<Book> getBooksSoldByUser(Long id);
+    List<BookDetails> getBooksSoldByUser(Long id);
 
     /**
      * Adds funds to a user's account.

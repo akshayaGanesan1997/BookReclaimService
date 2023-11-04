@@ -2,7 +2,7 @@
 # Book Marketplace Application
 
 ![Java](https://img.shields.io/badge/Java-11-brightgreen)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.5.4-brightgreen)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.1.5-brightgreen)
 ![Database](https://img.shields.io/badge/MySQL-lightgrey?logo=mysql&style=plastic&logoColor=white&labelColor=blue)
 
 # Table of Contents

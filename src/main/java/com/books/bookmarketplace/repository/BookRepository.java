@@ -50,12 +50,12 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     Book findBookByISBN(@Param("ISBN") String ISBN);
 
     /**
-     * Custom query to search for books based on a keyword in their title or author.
+     * Custom query to search for books based on a keyword in their title or author or category.
      *
-     * @param keyword The keyword to search for in titles and authors.
+     * @param keyword The keyword to search for in titles and authors and category.
      * @return A list of books matching the provided keyword.
      */
-    @Query("SELECT b FROM Book b WHERE LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.author) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    @Query("SELECT b FROM Book b WHERE LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.author) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.category) LIKE LOWER(:keyword)")
     List<Book> findBooksByKeyword(@Param("keyword") String keyword);
 
     /**

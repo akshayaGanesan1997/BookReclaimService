@@ -69,7 +69,7 @@ public interface BookService {
      * @param keyword The keyword to search for in book titles and authors.
      * @return A list of books matching the provided keyword.
      */
-    List<Book> searchBooks(String keyword);
+    List<Book> searchBooks(String keyword, Double minPrice, Double maxPrice, String sortBy, String sortOrder);
 
     /**
      * Add a new book to the marketplace.
@@ -102,7 +102,7 @@ public interface BookService {
      * @param bookId The unique identifier of the book to purchase.
      * @return A status message indicating the result of the purchase.
      */
-    String buyBook(Long userId, Long bookId);
+    void buyBook(Long userId, Long bookId);
 
     /**
      * Sell a book by a user.
@@ -111,7 +111,7 @@ public interface BookService {
      * @param bookId The unique identifier of the book to sell.
      * @return A status message indicating the result of the sale.
      */
-    String sellBook(Long userId, Long bookId);
+    void sellBook(Long userId, Long bookId);
 
     /**
      * Sell a book by ISBN (International Standard Book Number).
@@ -120,5 +120,5 @@ public interface BookService {
      * @param isbn   The ISBN of the book to sell.
      * @return A status message indicating the result of the sale.
      */
-    String sellBookByISBN(Long userId, String isbn);
+    void sellBookByISBN(Long userId, String isbn, Book book);
 }

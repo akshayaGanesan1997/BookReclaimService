@@ -62,6 +62,8 @@ public class Book {
     @NotBlank(message = "Language is required") // Validation constraint, the language field must not be blank.
     private String language;
 
+    private int quantity; // Quantities of each book
+
     private String publisher; // Publisher of the book.
 
     @NotNull // Validation constraint, the original price must not be null.

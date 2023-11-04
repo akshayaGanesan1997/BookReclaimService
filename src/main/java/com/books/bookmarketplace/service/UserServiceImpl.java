@@ -1,15 +1,15 @@
 /**
  * UserServiceImpl.java
- *
+ * <p>
  * This Java class serves as a service for managing users and user-related operations within the marketplace application. Users play a pivotal role in the system, and this class provides a range of functionalities for handling user-related tasks such as user retrieval, addition, update, and deletion of user profiles. It also facilitates the retrieval of user purchase and sales history and the addition of funds to user accounts.
- *
+ * <p>
  * The class is organized into the following key sections:
  * - Dependencies: Declarations and initialization of repository dependencies.
  * - Methods for Managing Users: Retrieving, adding, updating, and deleting user profiles.
  * - Methods for Retrieving User Transactions: Retrieving lists of purchased and sold books by a user.
  * - Adding Funds to User Accounts: Functionality to increase a user's account balance.
  * - Private Helper Methods: Conversion methods to transform entities to model representations.
- *
+ * <p>
  * This class's purpose is to ensure efficient management of users, their transactions, and account balances, contributing to a seamless user experience and maintaining data consistency in the marketplace application.
  */
 
@@ -20,6 +20,7 @@ import com.books.bookmarketplace.entity.Transaction;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.UserAlreadyExistsException;
 import com.books.bookmarketplace.errorhandler.UserNotFoundException;
+import com.books.bookmarketplace.model.BookDetails;
 import com.books.bookmarketplace.model.TransactionDetails;
 import com.books.bookmarketplace.model.UserDetails;
 import com.books.bookmarketplace.repository.TransactionRepository;
@@ -118,6 +119,10 @@ public class UserServiceImpl implements UserService {
 
         User existingUser = userRepository.findById(id).orElse(null);
         if (existingUser != null) {
+            User userWithSameUserNameOrEmail = userRepository.findByEmailOrUsername(user.getEmail(), user.getUsername());
+            if (userWithSameUserNameOrEmail != null && !userWithSameUserNameOrEmail.getUserId().equals(id)) {
+                throw new UserAlreadyExistsException("An existing user with the same username or email already exists.");
+            }
             existingUser.setEmail(user.getEmail());
             existingUser.setFirstName(user.getFirstName());
             existingUser.setLastName(user.getLastName());
@@ -159,10 +164,16 @@ public class UserServiceImpl implements UserService {
      * @throws UserNotFoundException if the user does not exist.
      */
     @Override
-    public List<Book> getPurchasedBooksByUser(Long id) {
+    public List<BookDetails> getPurchasedBooksByUser(Long id) {
         userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
-        return transactionRepository.findPurchasedBooksByUser(id);
+        List<Book> books = transactionRepository.findPurchasedBooksByUser(id);
+        List<BookDetails> purchaseBooks = new ArrayList<>();
+        for (Book book : books) {
+            BookDetails bookDetails = convertBookToBookDetails(book);
+            purchaseBooks.add(bookDetails);
+        }
+        return purchaseBooks;
     }
 
     /**
@@ -173,10 +184,17 @@ public class UserServiceImpl implements UserService {
      * @throws UserNotFoundException if the user does not exist.
      */
     @Override
-    public List<Book> getBooksSoldByUser(Long id) {
+    public List<BookDetails> getBooksSoldByUser(Long id) {
         userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found for the given id: " + id));
-        return transactionRepository.findBooksSoldByUser(id);
+
+        List<Book> books = transactionRepository.findBooksSoldByUser(id);
+        List<BookDetails> soldBooks = new ArrayList<>();
+        for (Book book : books) {
+            BookDetails bookDetails = convertBookToBookDetails(book);
+            soldBooks.add(bookDetails);
+        }
+        return soldBooks;
     }
 
 
@@ -236,6 +254,28 @@ public class UserServiceImpl implements UserService {
         transactionDetails.setTransactionType(transaction.getTransactionType());
 
         return transactionDetails;
+    }
+
+    public BookDetails convertBookToBookDetails(Book book) {
+        BookDetails bookDetails = new BookDetails();
+        bookDetails.setBookId(book.getBookId());
+        bookDetails.setCategory(String.valueOf(book.getCategory()));
+        bookDetails.setDescription(book.getDescription());
+        bookDetails.setEdition(book.getEdition());
+        bookDetails.setAuthor(book.getAuthor());
+        bookDetails.setISBN(book.getISBN());
+        bookDetails.setLanguage(book.getLanguage());
+        bookDetails.setStatus(String.valueOf(book.getStatus()));
+        bookDetails.setCurrentPrice(book.getCurrentPrice());
+        bookDetails.setQuantity(book.getQuantity());
+        bookDetails.setPublisher(book.getPublisher());
+        bookDetails.setOriginalPrice(book.getOriginalPrice());
+        bookDetails.setTitle(book.getTitle());
+        bookDetails.setAuthor(book.getAuthor());
+        bookDetails.setPublicationYear(book.getPublicationYear());
+        bookDetails.setCondition(String.valueOf(book.getCondition()));
+
+        return bookDetails;
     }
 
 }

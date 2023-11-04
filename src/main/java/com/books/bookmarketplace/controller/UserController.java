@@ -1,10 +1,10 @@
 /**
  * UserController.java
- * 
+ * <p>
  * This class serves as the controller for managing user-related operations in the Book Marketplace application.
  * It handles incoming HTTP requests related to users, including retrieving, adding, updating, deleting users,
  * and other user-related operations. This controller interacts with the UserService to perform these actions.
- * 
+ * <p>
  * Endpoints:
  * - GET /users/          : Retrieve all users.
  * - GET /users/getUserById?userId={id} : Retrieve a user by their ID.
@@ -15,18 +15,18 @@
  * - GET /users/purchasedBooks?userId={id} : Retrieve books purchased by a user.
  * - GET /users/booksSoldByUser?userId={id} : Retrieve books sold by a user.
  * - PUT /users/addFunds?userId={id}&funds={amount} : Add funds to a user's account.
- * 
+ * <p>
  * This class uses validation annotations to ensure the correctness of incoming data and
  * includes error handling for various exceptional cases. It logs events and errors using a Logger.
  */
 
 package com.books.bookmarketplace.controller;
 
-import com.books.bookmarketplace.entity.Book;
 import com.books.bookmarketplace.entity.User;
 import com.books.bookmarketplace.errorhandler.UserAlreadyExistsException;
 import com.books.bookmarketplace.errorhandler.UserNotFoundException;
 import com.books.bookmarketplace.errorhandler.ValidationException;
+import com.books.bookmarketplace.model.BookDetails;
 import com.books.bookmarketplace.model.UserDetails;
 import com.books.bookmarketplace.service.UserService;
 import jakarta.validation.Valid;
@@ -180,12 +180,12 @@ public class UserController {
 
     // GET Request to retrieve books purchased by a user
     @GetMapping("/purchasedBooks")
-    public ResponseEntity<List<Book>> purchasedBooks(@Valid @RequestParam(name = "userId") Long userId) {
+    public ResponseEntity<List<BookDetails>> purchasedBooks(@Valid @RequestParam(name = "userId") Long userId) {
         try {
             if (userId == null || userId <= 0) {
                 throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
             }
-            List<Book> purchasedBooks = userService.getPurchasedBooksByUser(userId);
+            List<BookDetails> purchasedBooks = userService.getPurchasedBooksByUser(userId);
 
             if (purchasedBooks.isEmpty()) {
                 logger.log(Level.INFO, "No books available");
@@ -203,12 +203,12 @@ public class UserController {
 
     // GET Request to retrieve books sold by a user
     @GetMapping("/booksSoldByUser")
-    public ResponseEntity<List<Book>> booksSoldByUser(@Valid @RequestParam(name = "userId") Long userId) {
+    public ResponseEntity<List<BookDetails>> booksSoldByUser(@Valid @RequestParam(name = "userId") Long userId) {
         try {
             if (userId == null || userId <= 0) {
                 throw new ValidationException(Collections.singletonList("Invalid user ID. Please provide a positive numeric value."));
             }
-            List<Book> soldBooks = userService.getBooksSoldByUser(userId);
+            List<BookDetails> soldBooks = userService.getBooksSoldByUser(userId);
 
             if (soldBooks.isEmpty()) {
                 logger.log(Level.INFO, "No books sold by the user");
